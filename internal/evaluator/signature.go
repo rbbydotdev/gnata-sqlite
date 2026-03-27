@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // processCallArgs handles three pre-call concerns for typed lambdas:

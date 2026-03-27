@@ -3,7 +3,7 @@ package gnata_test
 import (
 	"testing"
 
-	"github.com/recolabs/gnata"
+	"github.com/rbbydotdev/gnata-sqlite"
 )
 
 func TestCompile(t *testing.T) {

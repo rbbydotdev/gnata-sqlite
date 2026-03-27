@@ -4,7 +4,7 @@ import (
 	"context"
 	"maps"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // defaultMaxCallDepth is the maximum recursive call depth before U1001 is returned.

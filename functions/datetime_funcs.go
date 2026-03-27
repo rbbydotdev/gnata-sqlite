@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/recolabs/gnata/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
 )
 
 func fnNow(args []any, _ any) (any, error) {

@@ -5,7 +5,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 func evalBinary(node *parser.Node, input any, env *Environment) (any, error) { //nolint:gocyclo,funlen // dispatch

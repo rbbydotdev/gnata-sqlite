@@ -16,9 +16,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/recolabs/gnata/functions"
-	"github.com/recolabs/gnata/internal/evaluator"
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/functions"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 	"github.com/tidwall/gjson"
 )
 
@@ -355,6 +355,17 @@ func NewCustomEnv(customFuncs map[string]CustomFunc) *evaluator.Environment {
 // EvalWithVars evaluates the expression with extra variable bindings.
 func (e *Expression) EvalWithVars(ctx context.Context, data any, vars map[string]any) (result any, err error) {
 	return e.evalCore(ctx, data, builtinEnv, vars)
+}
+
+// Source returns the original expression source string.
+func (e *Expression) Source() string {
+	return e.src
+}
+
+// AST returns the post-processed AST root node.
+// Used by the query planner to decompose expressions into streaming accumulators.
+func (e *Expression) AST() *parser.Node {
+	return e.ast
 }
 
 // IsFastPath reports whether this expression uses the zero-copy GJSON pure-path fast path.

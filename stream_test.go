@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/recolabs/gnata"
+	"github.com/rbbydotdev/gnata-sqlite"
 )
 
 const streamTestData = `{

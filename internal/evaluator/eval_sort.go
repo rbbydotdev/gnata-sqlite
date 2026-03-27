@@ -4,7 +4,7 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 func evalSort(node *parser.Node, input any, env *Environment) (any, error) {

@@ -1,0 +1,176 @@
+// Lezer grammar for JSONata expressions.
+// Derived from gnata's Pratt parser (internal/parser/parser.go).
+// Precedence levels map to gnata's bindingPower() function.
+
+@top Expression { expression }
+
+@precedence {
+  call @left,
+  path @left,
+  group @left,
+  power @right,
+  multiply @left,
+  add @left,
+  chain @right,
+  compare @left,
+  logicAnd @left,
+  logicOr @left,
+  range @right,
+  ternary @right,
+  assign @right
+}
+
+expression {
+  atom |
+  UnaryMinus { !add ArithOp { "-" } expression } |
+  BinaryExpr |
+  ConditionalExpr |
+  AssignExpr |
+  PathExpr |
+  FunctionCall |
+  Subscript |
+  KeepArray { expression !call "[" "]" } |
+  SortExpr |
+  GroupExpr |
+  FocusExpr { expression !path "@" Variable } |
+  IndexExpr { expression !path "#" Variable } |
+  ChainExpr { expression !chain ChainOp expression }
+}
+
+atom {
+  Name |
+  Variable |
+  String |
+  Number |
+  Boolean |
+  Null |
+  Regex |
+  Wildcard { "*" } |
+  Descendant { "**" } |
+  Parent { "%" } |
+  Placeholder { "?" } |
+  ArrayConstructor { "[" commaSep<expression>? "]" } |
+  ObjectConstructor { "{" commaSep<KeyValuePair>? "}" } |
+  Block { "(" blockBody ")" } |
+  Lambda |
+  TransformExpr
+}
+
+blockBody { expression (";" expression)* }
+
+BinaryExpr {
+  expression !power ArithOp { "**" } expression |
+  expression !multiply (ArithOp { "*" } | ArithOp { "/" } | ArithOp { "%" }) expression |
+  expression !add (ArithOp { "+" } | ArithOp { "-" } | ConcatOp) expression |
+  expression !compare (CompareOp | kw<"in">) expression |
+  expression !logicAnd kw<"and"> expression |
+  expression !logicOr kw<"or"> expression |
+  expression !range (RangeOp | PipeOp | ElvisOp | CoalesceOp) expression
+}
+
+ConditionalExpr {
+  expression !ternary "?" expression (":" expression)?
+}
+
+AssignExpr {
+  Variable !assign AssignOp expression
+}
+
+PathExpr {
+  expression !path "." expression
+}
+
+FunctionCall {
+  expression !call ArgList
+}
+
+ArgList {
+  "(" commaSep<expression>? ")"
+}
+
+Subscript {
+  expression !call "[" expression "]"
+}
+
+SortExpr {
+  expression !compare "^" "(" commaSep<SortTerm> ")"
+}
+
+SortTerm {
+  ("<" | ">")? expression
+}
+
+GroupExpr {
+  expression !group "{" commaSep<KeyValuePair> "}"
+}
+
+Lambda {
+  kw<"function"> "(" commaSep<Variable>? ")" LambdaBody { "{" expression "}" }
+}
+
+TransformExpr {
+  "|" expression "|" expression ("," expression)? "|"
+}
+
+KeyValuePair {
+  expression ":" expression
+}
+
+commaSep<content> { content ("," content)* }
+
+kw<term> { @specialize[@name={term}]<Name, term> }
+
+@skip { whitespace | BlockComment }
+
+@tokens {
+  whitespace { $[ \t\n\r]+ }
+
+  BlockComment { "/*" blockCommentRest }
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+  blockCommentAfterStar { "/" | ![/] blockCommentRest }
+
+  Name { $[a-zA-Z_] $[a-zA-Z0-9_]* | "`" ![`]* "`" }
+  Variable { "$" $[a-zA-Z_$] $[a-zA-Z0-9_]* | "$$" | "$" }
+
+  @precedence { Variable, "$" }
+
+  String {
+    "\"" (![\"\\] | "\\" _)* "\"" |
+    "'" (!['\\] | "\\" _)* "'"
+  }
+
+  Number {
+    $[0-9]+ ("." $[0-9]+)? ($[eE] $[+\-]? $[0-9]+)?
+  }
+
+  Regex { "/" (![/\\\n] | "\\" _)+ "/" $[igm]* }
+
+  @precedence { BlockComment, Regex, "/" }
+  @precedence { "**", "*" }
+  @precedence { "..", "." }
+  @precedence { ":=", ":" }
+  @precedence { "!=", "!" }
+  @precedence { ">=", ">" }
+  @precedence { "<=", "<" }
+  @precedence { "~>", "~" }
+  @precedence { "??", "?:", "?" }
+  @precedence { Number, "." }
+
+  Boolean { "true" | "false" }
+  Null { "null" }
+
+  @precedence { Boolean, Null, "function", "and", "or", "in", Name }
+
+  ChainOp { "~>" }
+  AssignOp { ":=" }
+  RangeOp { ".." }
+  ElvisOp { "?:" }
+  CoalesceOp { "??" }
+  ConcatOp { "&" }
+  PipeOp { "|" }
+  CompareOp { "=" | "!=" | "<" | ">" | "<=" | ">=" }
+
+  "." "," ";" ":" "(" ")" "[" "]" "{" "}" "?" "^" "@" "#"
+}
+
+@detectDelim

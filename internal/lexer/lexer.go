@@ -20,8 +20,19 @@ func NewLexer(src string) *Lexer {
 	return &Lexer{src: src}
 }
 
-func lexError(code, msg string) error {
-	return fmt.Errorf("JSONata error %s: %s", code, msg)
+// LexError is a structured error returned by the lexer.
+type LexError struct {
+	Code string // error code: S0101, S0102, etc.
+	Msg  string // human-readable description
+	Pos  int    // byte offset in source (-1 if unknown)
+}
+
+func (e *LexError) Error() string {
+	return fmt.Sprintf("JSONata error %s: %s", e.Code, e.Msg)
+}
+
+func lexError(code, msg string, pos int) *LexError {
+	return &LexError{Code: code, Msg: msg, Pos: pos}
 }
 
 // isStopChar reports whether ch is a character that terminates identifier scanning.
@@ -63,7 +74,7 @@ func (l *Lexer) Next(infix bool) (Token, error) { //nolint:gocyclo,funlen // dis
 				return l.Next(infix)
 			}
 		}
-		return Token{}, lexError("S0106", "unclosed block comment")
+		return Token{}, lexError("S0106", "unclosed block comment", startPos)
 	}
 
 	// Regex literal — only in prefix position.
@@ -89,7 +100,7 @@ func (l *Lexer) Next(infix bool) (Token, error) { //nolint:gocyclo,funlen // dis
 						// Even number of backslashes → unescaped closing '/'.
 						pattern := l.src[patStart:l.pos]
 						if pattern == "" {
-							return Token{}, lexError("S0301", "empty regex pattern")
+							return Token{}, lexError("S0301", "empty regex pattern", startPos)
 						}
 						l.pos++ // consume closing '/'
 
@@ -100,7 +111,7 @@ func (l *Lexer) Next(infix bool) (Token, error) { //nolint:gocyclo,funlen // dis
 								flags.WriteByte(fc)
 								l.pos++
 							} else {
-								return Token{}, lexError("S0302", "invalid regex flag")
+								return Token{}, lexError("S0302", "invalid regex flag", l.pos)
 							}
 						}
 						flags.WriteByte('g')
@@ -120,7 +131,7 @@ func (l *Lexer) Next(infix bool) (Token, error) { //nolint:gocyclo,funlen // dis
 				l.pos++
 			}
 		}
-		return Token{}, lexError("S0302", "unterminated regex")
+		return Token{}, lexError("S0302", "unterminated regex", startPos)
 	}
 
 	// Two-character operators — must be checked before single-character.
@@ -177,7 +188,7 @@ func (l *Lexer) Next(infix bool) (Token, error) { //nolint:gocyclo,funlen // dis
 			l.pos++
 		}
 		if l.pos >= len(l.src) {
-			return Token{}, lexError("S0105", "unterminated backtick name")
+			return Token{}, lexError("S0105", "unterminated backtick name", startPos)
 		}
 		name := l.src[nameStart:l.pos]
 		l.pos++
@@ -274,7 +285,7 @@ func (l *Lexer) scanString(quote byte, startPos int) (Token, error) {
 		// Escape sequence.
 		l.pos++
 		if l.pos >= len(l.src) {
-			return Token{}, lexError("S0101", "unterminated string literal")
+			return Token{}, lexError("S0101", "unterminated string literal", startPos)
 		}
 		esc := l.src[l.pos]
 		l.pos++
@@ -283,15 +294,15 @@ func (l *Lexer) scanString(quote byte, startPos int) (Token, error) {
 			continue
 		}
 		if esc != 'u' {
-			return Token{}, lexError("S0103", "invalid escape sequence: \\"+string(esc))
+			return Token{}, lexError("S0103", "invalid escape sequence: \\"+string(esc), l.pos-1)
 		}
 		if l.pos+4 > len(l.src) {
-			return Token{}, lexError("S0104", "invalid unicode escape: too short")
+			return Token{}, lexError("S0104", "invalid unicode escape: too short", l.pos)
 		}
 		hex := l.src[l.pos : l.pos+4]
 		r, err := strconv.ParseInt(hex, 16, 32)
 		if err != nil {
-			return Token{}, lexError("S0104", "invalid unicode escape: \\u"+hex)
+			return Token{}, lexError("S0104", "invalid unicode escape: \\u"+hex, l.pos)
 		}
 		l.pos += 4
 		// Handle UTF-16 surrogate pairs: high surrogate + low surrogate -> single code point.
@@ -304,7 +315,7 @@ func (l *Lexer) scanString(quote byte, startPos int) (Token, error) {
 		}
 		sb.WriteRune(rune(r))
 	}
-	return Token{}, lexError("S0101", "unterminated string literal")
+	return Token{}, lexError("S0101", "unterminated string literal", startPos)
 }
 
 // scanNumber scans a numeric literal starting at startPos (first char is a digit).
@@ -343,7 +354,7 @@ func (l *Lexer) scanNumber(startPos int) (Token, error) {
 	numStr := l.src[numStart:l.pos]
 	f, err := strconv.ParseFloat(numStr, 64)
 	if err != nil || math.IsInf(f, 0) || math.IsNaN(f) {
-		return Token{}, lexError("S0102", "invalid number literal: "+numStr)
+		return Token{}, lexError("S0102", "invalid number literal: "+numStr, startPos)
 	}
 	return Token{Type: TokenNumber, Value: numStr, NumVal: f, Pos: startPos}, nil
 }

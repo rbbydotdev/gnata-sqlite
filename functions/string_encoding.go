@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/recolabs/gnata/internal/evaluator"
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // ── $eval ─────────────────────────────────────────────────────────────────────

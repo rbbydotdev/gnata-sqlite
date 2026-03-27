@@ -3,392 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>gnata</title>
+<title>gnata-sqlite</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>G</text></svg>">
 <link rel="preload" href="gnata.wasm" as="fetch" type="application/wasm">
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
-  }
+  :root { --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace; }
 
+  /* -- TokyoNight Night -- */
   [data-theme="dark"] {
-    --bg: #0F2032;
-    --surface: #172A3E;
-    --surface-hover: rgba(255,255,255,0.05);
-    --text: #E1E2EF;
-    --text-strong: #FDF8F8;
-    --accent: #B5E600;
-    --accent-dim: rgba(181, 230, 0, 0.12);
-    --accent-hover: #c8f21a;
-    --accent-text: #0F2032;
-    --vista: #869CFF;
-    --error: #E55381;
-    --muted: #6b7a8d;
-    --border: #1f3348;
-    --border-light: #253d55;
-    --editor-bg: #0F2032;
-    --reco-logo: #B5E600;
-    color-scheme: dark;
+    --bg: #1a1b26; --surface: #1f2335; --surface-hover: rgba(255,255,255,0.04);
+    --text: #a9b1d6; --text-strong: #c0caf5;
+    --accent: #7aa2f7; --accent-dim: rgba(122,162,247,0.12); --accent-hover: #89b4fa; --accent-text: #1a1b26;
+    --green: #9ece6a; --green-dim: rgba(158,206,106,0.12);
+    --vista: #bb9af7; --orange: #ff9e64; --teal: #73daca;
+    --error: #f7768e; --muted: #565f89;
+    --border: #292e42; --border-light: #3b4261;
+    --cm-bg: #1a1b26; color-scheme: dark;
   }
-
+  /* -- TokyoNight Day -- */
   [data-theme="light"] {
-    --bg: #d8dde5;
-    --surface: #e2e7ee;
-    --surface-hover: rgba(0,0,0,0.06);
-    --text: #2e2e3e;
-    --text-strong: #1a1a2a;
-    --accent: #2563eb;
-    --accent-dim: rgba(37, 99, 235, 0.10);
-    --accent-hover: #1d4ed8;
-    --accent-text: #ffffff;
-    --vista: #5b6aff;
-    --error: #d63362;
-    --muted: #6a6a7a;
-    --border: #c4cbd6;
-    --border-light: #b8c0cc;
-    --editor-bg: #e2e7ee;
-    --reco-logo: #0F2032;
-    color-scheme: light;
+    --bg: #d5d6db; --surface: #e1e2e7; --surface-hover: rgba(0,0,0,0.04);
+    --text: #3760bf; --text-strong: #343b58;
+    --accent: #2e7de9; --accent-dim: rgba(46,125,233,0.10); --accent-hover: #1d4ed0; --accent-text: #ffffff;
+    --green: #587539; --green-dim: rgba(88,117,57,0.12);
+    --vista: #7847bd; --orange: #b15c00; --teal: #118c74;
+    --error: #c64343; --muted: #848cb5;
+    --border: #c4c8da; --border-light: #b6bfe2;
+    --cm-bg: #e1e2e7; color-scheme: light;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; transition: background 0.25s, color 0.25s; }
 
-  body {
-    font-family: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    transition: background 0.25s, color 0.25s;
-  }
+  /* Header */
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--surface); transition: background 0.25s; flex-shrink: 0; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-strong); }
+  header h1 span { color: var(--green); font-family: 'Poppins', sans-serif; font-weight: 600; }
+  .header-links { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .header-links a { font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; padding: 5px 10px; border-radius: 6px; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+  .header-links a:hover { color: var(--text-strong); background: var(--surface-hover); }
+  .header-links .sep { width: 1px; height: 16px; background: var(--border-light); margin: 0 2px; }
+  .theme-toggle { background: none; border: 1px solid var(--border-light); color: var(--muted); padding: 5px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; }
+  .theme-toggle:hover { color: var(--text-strong); border-color: var(--muted); background: var(--surface-hover); }
+  .theme-icon { display: flex; align-items: center; }
+  .status { font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--muted); padding-left: 8px; }
+  .status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+  .status.ready .dot { background: var(--green); }
+  .status.ready { color: var(--green); }
+  .progress-bar { position: fixed; top: 0; left: 0; height: 2px; background: var(--accent); width: 0%; transition: width 0.2s ease; z-index: 999; }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 24px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    transition: background 0.25s, border-color 0.25s;
-  }
+  /* Mode tabs in header */
+  .mode-tabs { display: flex; gap: 0; margin-left: 4px; }
+  .mode-tab { font-family: 'Onest', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 16px; background: none; border: 1px solid var(--border-light); color: var(--muted); cursor: pointer; transition: all 0.15s; border-radius: 0; }
+  .mode-tab:first-child { border-radius: 6px 0 0 6px; }
+  .mode-tab:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+  .mode-tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+  .mode-tab:hover:not(.active) { color: var(--text); border-color: var(--muted); background: var(--surface-hover); }
 
-  header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    color: var(--text-strong);
-  }
-
-  header h1 span { color: var(--accent); font-family: 'Poppins', sans-serif; font-weight: 600; }
-
-  header .badge {
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    background: var(--accent-dim);
-    color: var(--accent);
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-
-  .header-links {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .header-links a {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
-    text-decoration: none;
-    padding: 5px 10px;
-    border-radius: 6px;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .header-links a:hover {
-    color: var(--text-strong);
-    background: var(--surface-hover);
-  }
-
-  .header-links .sep {
-    width: 1px;
-    height: 16px;
-    background: var(--border-light);
-    margin: 0 2px;
-  }
-
-  .theme-toggle {
-    background: none;
-    border: 1px solid var(--border-light);
-    color: var(--muted);
-    padding: 5px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    font-size: 14px;
-    line-height: 1;
-  }
-
-  .theme-toggle:hover {
-    color: var(--text-strong);
-    border-color: var(--muted);
-    background: var(--surface-hover);
-  }
-
-  .status {
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-    padding-left: 8px;
-  }
-
-  .status .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: background 0.3s;
-  }
-
-  .status.ready .dot { background: var(--accent); }
-  .status.ready { color: var(--accent); }
-
-  .progress-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 2px;
-    background: var(--accent);
-    width: 0%;
-    transition: width 0.2s ease;
-    z-index: 999;
-  }
-
-  .container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
-    gap: 0;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  .panel {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border);
-    overflow: hidden;
-    transition: border-color 0.25s;
-  }
-
-  .panel:last-child { border-right: none; }
-
-  .panel-header {
-    padding: 10px 16px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: background 0.25s, border-color 0.25s;
-  }
-
-  .expr-bar {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: stretch;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    transition: background 0.25s, border-color 0.25s;
-  }
-
-  .expr-bar .panel-header {
-    border-bottom: none;
-    border-right: 1px solid var(--border);
-    min-width: 120px;
-  }
-
-  #expression {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text-strong);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    padding: 12px 16px;
-    outline: none;
-    resize: none;
-  }
-
-  #expression::placeholder { color: var(--muted); }
-
-  textarea, pre {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    padding: 16px;
-    outline: none;
-    resize: none;
-    overflow: auto;
-    tab-size: 2;
-    white-space: pre;
-    transition: color 0.25s;
-  }
-
-  #result {
-    margin: 0;
-    line-height: 1.5;
-    min-height: 100%;
-  }
-
-  #result.error { color: var(--error); }
-  #result.success { color: var(--accent); }
-
-  .toolbar {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    transition: background 0.25s, border-color 0.25s;
-  }
-
-  button {
-    font-family: 'Onest', inherit;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: var(--accent-text);
-  }
-
+  /* Buttons */
+  button { font-family: 'Onest', inherit; font-size: 13px; font-weight: 600; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border-light); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-ghost.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+  kbd { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; padding: 3px 7px; border-radius: 4px; margin-left: 8px; letter-spacing: 1px; }
+  .btn-primary kbd { background: rgba(255,255,255,0.2); color: var(--accent-text); }
+  .timing { font-size: 12px; font-family: var(--font-mono); color: var(--accent); }
 
-  .btn-ghost {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border-light);
+  .btn-generate { padding: 8px 18px; font-size: 12px; }
+
+  /* Layout */
+  .app { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
+  .mode-content { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
+  .mode-content.active { display: flex; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); transition: background 0.25s; flex-wrap: wrap; flex-shrink: 0; }
+  .toolbar-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+  .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .toolbar .sep { width: 1px; height: 20px; background: var(--border-light); }
+  .gen-group { display: flex; gap: 0; }
+  .gen-group button { border-radius: 0; border: 1px solid var(--border-light); border-left: none; padding: 6px 14px; font-size: 12px; }
+  .gen-group button:first-child { border-radius: 6px 0 0 6px; border-left: 1px solid var(--border-light); }
+  .gen-group button:last-child { border-radius: 0 6px 6px 0; }
+
+  /* Query example bar */
+  .query-bar { display: flex; align-items: center; gap: 10px; padding: 7px 16px; background: var(--bg); border-bottom: 1px solid var(--border); overflow: hidden; flex-shrink: 0; }
+  .query-bar-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  .query-pills { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+  .query-pills::-webkit-scrollbar { display: none; }
+  .query-pill { font-family: 'Onest', sans-serif; font-size: 12px; font-weight: 500; padding: 4px 14px; border-radius: 14px; border: 1px solid var(--border-light); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .query-pill:hover { color: var(--text); border-color: var(--muted); background: var(--surface-hover); }
+  .query-pill.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  .panels { display: grid; grid-template-columns: 3fr 2fr; flex: 1; overflow: hidden; min-height: 0; position: relative; }
+  .panel-divider { width: 5px; cursor: col-resize; background: transparent; position: absolute; top: 0; bottom: 0; z-index: 10; transition: background 0.15s; }
+  .panel-divider:hover, .panel-divider.dragging { background: var(--accent); }
+  .panel-header { padding: 10px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+
+  /* SQL Editor */
+  .editor-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; min-height: 0; }
+  #sqlEditor { flex: 1; overflow: hidden; background: var(--cm-bg); }
+  #sqlEditor .cm-editor { height: 100%; background: transparent; }
+  #sqlEditor .cm-editor.cm-focused { outline: none; }
+  #sqlEditor .cm-scroller { font-family: var(--font-mono); font-size: 13px; overflow: auto !important; }
+  #sqlEditor .cm-gutters { background: var(--cm-bg); color: var(--muted); border-right: 1px solid var(--border); }
+  #sqlEditor .cm-activeLineGutter { background: transparent; }
+  #sqlEditor .cm-activeLine { background: var(--surface-hover) !important; }
+
+  /* Right panel with tabs */
+  .right-panel { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .tab-bar { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 8px; gap: 0; }
+  .tab { font-family: 'Onest', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; border-radius: 0; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; flex: 1; overflow: hidden; flex-direction: column; min-height: 0; }
+  .tab-content.active { display: flex; }
+
+  /* Schema */
+  .schema-content { padding: 16px; font-size: 13px; flex: 1; overflow: auto; }
+  .schema-content h3 { color: var(--accent); font-size: 13px; font-weight: 600; margin: 12px 0 6px 0; font-family: var(--font-mono); }
+  .schema-content h3:first-child { margin-top: 0; }
+  .schema-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+  .schema-table td { padding: 2px 8px; font-family: var(--font-mono); font-size: 12px; border-bottom: 1px solid var(--border); }
+  .schema-table td:first-child { color: var(--text-strong); font-weight: 500; }
+  .schema-table td:last-child { color: var(--muted); }
+  .schema-content .row-count { font-size: 11px; color: var(--muted); }
+  .schema-content pre { font-family: var(--font-mono); font-size: 12px; color: var(--text); background: var(--surface-hover); padding: 8px 12px; border-radius: 6px; overflow-x: auto; white-space: pre; }
+  .schema-content .muted { color: var(--muted); font-style: italic; }
+
+  /* Getting started */
+  .getting-started { padding: 24px 4px; }
+  .getting-started h3 { color: var(--text-strong); font-size: 14px; font-weight: 700; margin-bottom: 16px; font-family: 'Onest', sans-serif; }
+  .getting-started ol { font-size: 13px; color: var(--muted); padding-left: 20px; line-height: 1.8; }
+  .getting-started li { margin-bottom: 4px; }
+  .getting-started strong { color: var(--text-strong); font-weight: 600; }
+
+  /* Results */
+  .results-body { flex: 1; overflow: auto; min-height: 0; }
+  .results-table-wrap { overflow: auto; flex: 1; }
+  .results-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 13px; }
+  .results-table thead { position: sticky; top: 0; z-index: 1; }
+  .results-table th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); background: var(--surface); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .results-table td { padding: 6px 12px; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; max-width: 400px; overflow: hidden; text-overflow: ellipsis; }
+  .results-table tbody tr { cursor: pointer; }
+  .results-table tbody tr:hover { background: var(--surface-hover); }
+  .results-table tbody tr.focused { background: var(--accent-dim); }
+  .results-table tbody tr.focused:hover { background: var(--accent-dim); }
+
+  /* Row detail */
+  .row-detail { padding: 12px 16px; background: var(--surface); border-top: 1px solid var(--border); overflow: auto; min-height: 80px; max-height: 50vh; }
+  .row-detail-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .row-detail-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; border-radius: 4px; }
+  .row-detail-close:hover { color: var(--text-strong); background: var(--surface-hover); }
+  .row-detail pre { font-family: var(--font-mono); font-size: 12px; color: var(--text); background: var(--bg); padding: 10px 14px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .results-table .null-val { color: var(--muted); font-style: italic; }
+  .results-table .json-val { color: var(--vista); }
+  .results-table .num-val { color: var(--orange); }
+  .results-footer { padding: 8px 16px; font-size: 12px; color: var(--muted); background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-between; flex-shrink: 0; }
+  .results-message { padding: 24px; text-align: center; color: var(--muted); font-size: 13px; }
+  .results-message.error { color: var(--error); text-align: left; padding: 16px; font-family: var(--font-mono); white-space: pre-wrap; }
+
+  /* Benchmark banner */
+  .bench-banner { padding: 14px 20px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .bench-title { font-size: 13px; font-weight: 600; color: var(--text-strong); }
+  .bench-title span { color: var(--muted); font-weight: 400; }
+  .bench-bar-track { flex: 1; max-width: 320px; height: 28px; background: var(--border); border-radius: 6px; overflow: hidden; position: relative; }
+  .bench-bar { height: 100%; border-radius: 6px; background: var(--green); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 12px; font-weight: 700; color: var(--bg); min-width: 60px; transition: width 0.5s ease; }
+  .bench-tag { font-size: 11px; font-weight: 600; color: var(--green); background: var(--green-dim); padding: 3px 10px; border-radius: 10px; white-space: nowrap; }
+
+  /* Autocomplete */
+  .cm-tooltip-autocomplete { background: var(--surface) !important; border: 1px solid var(--border-light) !important; border-radius: 6px; }
+  .cm-tooltip-autocomplete ul li { color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 4px 10px; }
+  .cm-tooltip-autocomplete ul li[aria-selected] { background: var(--accent-dim) !important; color: var(--accent) !important; }
+  .cm-tooltip-autocomplete .cm-completionLabel { color: inherit; }
+  .cm-tooltip-autocomplete .cm-completionDetail { color: var(--muted); font-style: normal; margin-left: 8px; }
+  .cm-completionIcon { display: none; }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ========== gnata (JSONata) mode ========== */
+
+  /* Expression bar */
+  .g-expr-bar { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+  .g-expr-bar .panel-header { border-bottom: none; border-right: 1px solid var(--border); min-width: 120px; }
+  #g-expression { flex: 1; overflow: hidden; background: var(--cm-bg); }
+  #g-expression .cm-editor { height: 100%; background: transparent; }
+  #g-expression .cm-editor.cm-focused { outline: none; }
+  #g-expression .cm-scroller { font-family: var(--font-mono); font-size: 14px; padding: 6px 12px; overflow-x: auto !important; }
+  #g-expression .cm-content { padding: 0; }
+  #g-expression .cm-line { padding: 0; }
+  #g-expression .cm-gutters { display: none; }
+  #g-expression .cm-activeLine { background: transparent !important; }
+  #g-expression .cm-selectionBackground { background: rgba(130,170,255,0.2) !important; }
+  .cm-focused .cm-selectionBackground { background: rgba(130,170,255,0.3) !important; }
+
+  /* Squiggly error underlines */
+  .cm-diagnostic-error { border-bottom: none; }
+  .cm-lintRange-error {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='m0 3 l2 -2 l1 0 l2 2 l1 0' fill='none' stroke='%23f7768e' stroke-width='.7'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 6px 3px;
+    padding-bottom: 1px;
   }
+  .cm-tooltip-lint { background: var(--surface); border: 1px solid var(--border-light); border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 12px; }
+  .cm-lint-marker { display: none; }
 
-  .btn-ghost:hover {
-    color: var(--text);
-    border-color: var(--muted);
-  }
+  /* Hover tooltip */
+  .cm-tooltip-hover { background: var(--surface) !important; border: 1px solid var(--border-light) !important; border-radius: 6px; max-width: 480px; }
+  .cm-hover-tooltip { padding: 10px 14px; font-size: 13px; color: var(--text); line-height: 1.5; }
+  .cm-hover-tooltip strong { color: var(--accent); font-weight: 700; }
+  .cm-hover-tooltip code { font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 3px; color: var(--green); }
+  .cm-hover-tooltip pre { font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 8px 10px; border-radius: 4px; margin: 6px 0; color: var(--text); overflow-x: auto; }
+  .cm-hover-tooltip pre code { background: none; padding: 0; }
 
-  .timing {
-    font-size: 12px;
-    font-family: var(--font-mono);
-    color: var(--accent);
-  }
+  /* gnata panels */
+  .g-panels { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; min-height: 0; }
+  .g-panel { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .g-panel:first-child { border-right: 1px solid var(--border); }
+  #g-input, #g-result { flex: 1; overflow: hidden; background: var(--cm-bg); }
+  #g-input .cm-editor, #g-result .cm-editor { height: 100%; background: transparent; }
+  #g-input .cm-editor.cm-focused, #g-result .cm-editor.cm-focused { outline: none; }
+  #g-input .cm-scroller, #g-result .cm-scroller { font-family: var(--font-mono); font-size: 13px; overflow: auto !important; }
+  #g-input .cm-gutters, #g-result .cm-gutters { display: none; }
+  #g-input .cm-activeLine, #g-result .cm-activeLine { background: transparent !important; }
+  #g-result .cm-cursor { display: none !important; }
+  #g-result .cm-content { cursor: default; }
+  #g-result.result-error .cm-editor .cm-content { color: var(--error); }
+  #g-result.result-success .cm-editor .cm-content { color: var(--green); }
 
-  .toolbar-right {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
 
-  .reco-link {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    padding: 5px 10px;
-    border-radius: 6px;
-    transition: all 0.15s;
-    opacity: 0.5;
-  }
-
-  .reco-link:hover {
-    opacity: 0.85;
-    background: var(--surface-hover);
-  }
-
-  .reco-link svg { height: 20px; width: auto; }
-  .reco-link svg path { fill: var(--reco-logo); transition: fill 0.25s; }
-
-  kbd {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 12px;
-    padding: 3px 7px;
-    border-radius: 4px;
-    margin-left: 8px;
-    letter-spacing: 1px;
-  }
-
-  .btn-primary kbd {
-    background: rgba(255,255,255,0.2);
-    color: var(--accent-text);
-  }
-
-  .examples {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .example-chip {
-    font-family: 'Onest', sans-serif;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 4px 10px;
-    border-radius: 12px;
-    background: var(--border-light);
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-    border: none;
-  }
-
-  .example-chip:hover {
-    background: var(--accent-dim);
-    color: var(--accent);
-  }
-
-  .icon-ext {
-    width: 10px;
-    height: 10px;
-    opacity: 0.5;
-  }
 
   @media (max-width: 768px) {
-    .container {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr 1fr auto;
-    }
-    .panel { border-right: none; border-bottom: 1px solid var(--border); }
-    .header-links { gap: 2px; }
-    .header-links a { font-size: 11px; padding: 4px 6px; }
+    .panels { grid-template-columns: 1fr; }
+    .editor-panel { border-right: none; border-bottom: 1px solid var(--border); min-height: 200px; }
+    .toolbar { gap: 6px; }
+    .g-panels { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -397,315 +253,1481 @@
 <div class="progress-bar" id="progressBar"></div>
 
 <header>
-  <h1><span>gnata</span></h1>
-  <span class="badge">JSONata 2.x &middot; WASM</span>
-
+  <h1><span>gnata-sqlite</span></h1>
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="sqlite">SQLite</button>
+    <button class="mode-tab" data-mode="gnata">gnata</button>
+  </div>
   <div class="header-links">
-    <div class="status" id="status">
-      <span class="dot"></span>
-      <span>Loading&hellip;</span>
-    </div>
+    <div class="status" id="status"><span class="dot"></span><span>Loading&hellip;</span></div>
     <div class="sep"></div>
-    <a href="https://docs.jsonata.org/overview" target="_blank" rel="noopener">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 2.5A2.5 2.5 0 013.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8A1 1 0 002 11.5v.017c.001.147.03.29.076.42a.75.75 0 01-1.425.467A2.47 2.47 0 01.5 11.5V2.5zm1.5 0v6.563A2.5 2.5 0 013.5 9H11V1.5H3.5a1 1 0 00-1 1zm3.25 0a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75z"/></svg>
-      Docs
-    </a>
-    <a href="https://docs.jsonata.org/simple" target="_blank" rel="noopener">Paths</a>
-    <a href="https://docs.jsonata.org/expressions" target="_blank" rel="noopener">Expressions</a>
+    <a href="https://docs.jsonata.org/overview" target="_blank" rel="noopener">Docs</a>
     <a href="https://docs.jsonata.org/string-functions" target="_blank" rel="noopener">Functions</a>
     <div class="sep"></div>
-    <a href="https://try.jsonata.org" target="_blank" rel="noopener">
-      try.jsonata.org
-      <svg class="icon-ext" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 010 1.5h-3.5a.25.25 0 00-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-3.5a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2zm6.854-1h4.146a.25.25 0 01.25.25v4.146a.25.25 0 01-.427.177L13.03 4.03 9.28 7.78a.751.751 0 01-1.042-.018.751.751 0 01-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0110.604 1z"/></svg>
-    </a>
-    <div class="sep"></div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">
-      <span class="theme-icon"></span>
-    </button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode"><span class="theme-icon"></span></button>
   </div>
 </header>
 
-<div class="container">
-  <div class="expr-bar">
-    <div class="panel-header">Expression</div>
-    <textarea id="expression" rows="1" placeholder="e.g. Account.Order.Product.(Price * Quantity)" spellcheck="false">$sum(Account.Order.Product.(Price * Quantity))</textarea>
-  </div>
+<div class="app">
 
-  <div class="panel">
-    <div class="panel-header">
-      Input JSON
-      <div class="examples">
-        <button class="example-chip" data-example="invoice">Invoice</button>
-        <button class="example-chip" data-example="users">Users</button>
-        <button class="example-chip" data-example="simple">Simple</button>
+  <!-- ========== SQLite Mode ========== -->
+  <div class="mode-content active" id="sqliteMode">
+    <div class="toolbar">
+      <button class="btn-primary" id="runBtn" disabled>Run<kbd>&#8984;&#x21A9;</kbd></button>
+      <button class="btn-ghost" id="clearBtn">Clear</button>
+      <div class="sep"></div>
+      <span class="toolbar-label">Rows</span>
+      <div class="gen-group">
+        <button class="btn-ghost" data-count="1000">1K</button>
+        <button class="btn-ghost active" data-count="10000">10K</button>
+        <button class="btn-ghost" data-count="100000">100K</button>
+        <button class="btn-ghost" data-count="1000000">1M</button>
+      </div>
+      <button class="btn-primary btn-generate" id="generateBtn" disabled>Generate</button>
+      <span id="genHint" style="font-size:11px;color:var(--muted)">Generate fixture data</span>
+      <div class="toolbar-right">
+        <span id="timing" class="timing"></span>
       </div>
     </div>
-    <textarea id="input" spellcheck="false">{
-  "Account": {
-    "Name": "Firefly",
-    "Order": [
-      {
-        "OrderID": "order103",
-        "Product": [
-          { "Name": "Bowler Hat", "Price": 34.45, "Quantity": 2 },
-          { "Name": "Trilby hat", "Price": 21.67, "Quantity": 1 }
-        ]
-      },
-      {
-        "OrderID": "order104",
-        "Product": [
-          { "Name": "Cloak", "Price": 107.99, "Quantity": 1 }
-        ]
-      }
-    ]
-  }
-}</textarea>
-  </div>
 
-  <div class="panel">
-    <div class="panel-header">
-      Result
-      <span id="timing" class="timing"></span>
+    <div class="query-bar">
+      <span class="query-bar-label">Examples</span>
+      <div class="query-pills" id="queryPills"></div>
     </div>
-    <pre id="result"></pre>
-  </div>
 
-  <div class="toolbar">
-    <button class="btn-primary" id="runBtn" disabled>Run<kbd>&#8984;&#x21A9;</kbd></button>
-    <button class="btn-ghost" id="clearBtn">Clear</button>
-    <div class="toolbar-right">
-      <a href="https://www.reco.ai" target="_blank" rel="noopener" class="reco-link" title="Built by Reco">
-        <svg width="103" height="37" viewBox="0 0 103 37" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20.2593 12.1156C19.3118 11.0363 18.2627 10.2338 17.1516 9.74675C16.0405 9.25969 14.7828 9.01062 13.4179 9.01062C9.53182 9.01062 7.41113 11.2688 6.58203 12.4256V9.5641H0V36.4465H6.57639V21.5137C6.57639 19.2942 7.12348 17.6504 8.20638 16.6265C9.28929 15.6025 10.6824 15.0823 12.3462 15.0823C13.1077 15.0823 13.7845 15.1874 14.3598 15.3978C14.9294 15.6081 15.4539 15.9623 15.9164 16.4549L16.0574 16.6043L20.3721 12.2485L20.2537 12.1156H20.2593Z"/>
-          <path d="M45.2733 15.9568C44.1002 13.765 42.5266 12.0437 40.592 10.8316C38.6574 9.61944 36.2547 9.00508 33.4572 9.00508C30.6597 9.00508 28.2514 9.63605 26.0743 10.8814C23.8972 12.1267 22.1544 13.8093 20.8854 15.8903C19.6164 17.9714 18.9734 20.3458 18.9734 22.9417C18.9734 25.5375 19.6051 27.9285 20.8572 30.0483C22.1093 32.1681 23.8634 33.8728 26.0743 35.1126C28.2852 36.358 30.8628 36.9889 33.7392 36.9889C36.0009 36.9889 38.1216 36.596 40.028 35.8156C41.94 35.0351 43.5869 33.8673 44.9123 32.3397L45.0251 32.2069L40.8176 28.017L40.6822 28.172C39.8813 29.0687 38.883 29.755 37.7155 30.2199C36.548 30.6848 35.1888 30.9228 33.6828 30.9228C32.5999 30.9228 31.596 30.7844 30.6879 30.5077L45.341 16.0785L45.2733 15.9568ZM26.4071 27.1093C25.7585 25.9194 25.4313 24.5191 25.4313 22.9472C25.4313 21.3753 25.7641 20.0138 26.4184 18.8127C27.0726 17.6172 28.0202 16.6652 29.2384 15.99C30.4623 15.3092 31.9118 14.966 33.5588 14.966C35.2057 14.966 36.6383 15.2871 37.614 15.9291C37.6479 15.9512 37.6817 15.9789 37.7155 16.001L26.4014 27.1038L26.4071 27.1093Z"/>
-          <path d="M66.3787 28.0724C65.6172 28.9635 64.681 29.6443 63.6094 30.0926C62.5321 30.5409 61.3364 30.7678 60.0561 30.7678C58.5614 30.7678 57.2191 30.4358 56.0741 29.7716C54.9292 29.1129 54.0268 28.1886 53.3894 27.0319C52.7521 25.8696 52.425 24.5135 52.425 23.0081C52.425 21.5026 52.7465 20.1023 53.3894 18.9566C54.0268 17.8165 54.9292 16.9032 56.0741 16.239C57.2191 15.5804 58.5614 15.2428 60.0561 15.2428C61.3364 15.2428 62.5321 15.4697 63.6094 15.918C64.681 16.3663 65.6116 17.0416 66.3787 17.9382L66.514 18.0987L70.84 13.7927L70.7272 13.6598C69.4356 12.171 67.8507 11.0142 66.0177 10.2172C64.1847 9.42019 62.1768 9.01062 60.0617 9.01062C57.377 9.01062 54.9123 9.63052 52.7352 10.8592C50.5581 12.088 48.8209 13.7705 47.5745 15.8682C46.328 17.9659 45.6907 20.368 45.6907 23.0025C45.6907 25.6371 46.3224 27.9894 47.5745 30.1092C48.8209 32.229 50.5581 33.9227 52.7352 35.1458C54.9123 36.3746 57.377 36.9945 60.0617 36.9945C62.1768 36.9945 64.1847 36.5904 66.0177 35.7879C67.8564 34.9909 69.4412 33.8286 70.7272 32.3397L70.84 32.2069L66.514 27.9008L66.3787 28.0613V28.0724Z"/>
-          <path d="M87.2076 9.18773C79.1874 8.08078 71.7763 13.3831 70.6821 21.0045C69.5879 28.6259 75.2167 35.727 83.237 36.834C91.2516 37.9409 98.6684 32.6441 99.7626 25.0227C100.857 17.4013 95.2223 10.2947 87.2076 9.18773ZM93.942 22.5155C93.3779 26.4452 89.6724 29.1794 85.6679 28.6259C81.6634 28.0724 78.8772 24.4416 79.4412 20.5119C80.0052 16.5822 83.7051 13.8425 87.7096 14.396C91.7141 14.9494 94.506 18.5858 93.942 22.5155Z"/>
-          <path d="M101.037 0.752736C98.9955 -0.603285 96.2149 -0.0830155 94.8331 1.92611C93.4513 3.9297 93.9814 6.65835 96.0288 8.01437C98.0705 9.37039 100.851 8.85012 102.233 6.84099C103.615 4.8374 103.085 2.10876 101.037 0.752736Z"/>
-        </svg>
-      </a>
+    <div class="panels" id="panels">
+      <div class="editor-panel">
+        <div class="panel-header">SQL Query</div>
+        <div id="sqlEditor"><div class="results-message"><span class="spinner"></span> Loading editor...</div></div>
+      </div>
+      <div class="panel-divider" id="panelDivider"></div>
+      <div class="right-panel">
+        <div class="tab-bar">
+          <button class="tab active" data-tab="results">Results</button>
+          <button class="tab" data-tab="schema">Schema</button>
+        </div>
+        <div class="tab-content active" id="resultsTab">
+          <div class="results-body" id="resultsBody">
+            <div class="results-message">Run a query to see results.</div>
+          </div>
+          <div id="rowDetail"></div>
+          <div class="results-footer" id="resultsFooter" style="display:none"></div>
+        </div>
+        <div class="tab-content" id="schemaTab">
+          <div class="schema-content" id="schemaInfo">
+            <div class="getting-started">
+              <h3>Getting Started</h3>
+              <ol>
+                <li>Select a dataset size (1K &ndash; 1M)</li>
+                <li>Click <strong>Generate</strong> to create test data</li>
+                <li>Choose an example query above</li>
+                <li>Press <strong>Run</strong> (&#8984;&#x21A9;) to execute</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- ========== gnata (JSONata) Mode ========== -->
+  <div class="mode-content" id="gnataMode">
+    <div id="g-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+      <div id="g-loading" class="results-message"><span class="spinner"></span> Loading gnata playground...</div>
+      <div id="g-loaded" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+        <div class="toolbar">
+          <button class="btn-primary" id="g-runBtn" disabled>Run<kbd>&#8984;&#x21A9;</kbd></button>
+          <button class="btn-ghost" id="g-clearBtn">Clear</button>
+          <div class="toolbar-right">
+            <span id="g-timing" class="timing"></span>
+          </div>
+        </div>
+        <div class="query-bar">
+          <span class="query-bar-label">Examples</span>
+          <div class="query-pills" id="g-queryPills"></div>
+        </div>
+        <div class="g-expr-bar">
+          <div class="panel-header">Expression</div>
+          <div id="g-expression"></div>
+        </div>
+        <div class="g-panels">
+          <div class="g-panel">
+            <div class="panel-header">Input JSON</div>
+            <div id="g-input"></div>
+          </div>
+          <div class="g-panel">
+            <div class="panel-header">Result</div>
+            <div id="g-result"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<script src="wasm_exec.js"></script>
-<script>
-const THEME_KEY = 'gnata-playground-theme';
+<!-- ======== Web Worker source (not executed by browser) ======== -->
+<script type="text/worker" id="workerSrc">
+let db = null;
+let gnataEval = null;
+let _jqSampled = null;
+let ready = false;
+const pending = [];
 
-function getPreferredTheme() {
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored) return stored;
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem(THEME_KEY, theme);
-  const icon = document.querySelector('.theme-icon');
-  icon.textContent = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
-}
-
-applyTheme(getPreferredTheme());
-
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'dark' ? 'light' : 'dark');
-});
-
-window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-  if (!localStorage.getItem(THEME_KEY)) {
-    applyTheme(e.matches ? 'light' : 'dark');
-  }
-});
-
-const examples = {
-  invoice: {
-    expr: '$sum(Account.Order.Product.(Price * Quantity))',
-    data: `{
-  "Account": {
-    "Name": "Firefly",
-    "Order": [
-      {
-        "OrderID": "order103",
-        "Product": [
-          { "Name": "Bowler Hat", "Price": 34.45, "Quantity": 2 },
-          { "Name": "Trilby hat", "Price": 21.67, "Quantity": 1 }
-        ]
-      },
-      {
-        "OrderID": "order104",
-        "Product": [
-          { "Name": "Cloak", "Price": 107.99, "Quantity": 1 }
-        ]
-      }
-    ]
-  }
-}`
-  },
-  users: {
-    expr: '$filter(users, function($u) { $u.age >= 21 }).name',
-    data: `{
-  "users": [
-    { "name": "Alice", "age": 30, "role": "admin" },
-    { "name": "Bob", "age": 17, "role": "viewer" },
-    { "name": "Carol", "age": 25, "role": "editor" },
-    { "name": "Dave", "age": 19, "role": "viewer" }
-  ]
-}`
-  },
-  simple: {
-    expr: 'event.action = "login" and event.severity > 3',
-    data: `{
-  "event": {
-    "action": "login",
-    "severity": 5,
-    "user": "admin@example.com",
-    "metadata": { "ip": "10.0.0.1", "geo": "US" }
-  }
-}`
-  }
+self.onmessage = function(e) {
+  if (!ready && e.data.type !== 'init') { pending.push(e.data); return; }
+  handle(e.data);
 };
 
-const statusEl = document.getElementById('status');
-const exprEl = document.getElementById('expression');
-const inputEl = document.getElementById('input');
-const resultEl = document.getElementById('result');
-const timingEl = document.getElementById('timing');
-const runBtn = document.getElementById('runBtn');
-const clearBtn = document.getElementById('clearBtn');
+async function handle(msg) {
+  try {
+    switch (msg.type) {
+      case 'init': await doInit(msg); break;
+      case 'generate': await doGenerate(msg); break;
+      case 'query': doQuery(msg); break;
+    }
+  } catch (err) {
+    postMessage({ type: 'error', msg: err.message });
+  }
+}
 
-const go = new Go();
-const progressBar = document.getElementById('progressBar');
+async function doInit(msg) {
+  (new Function(msg.wasmExecText))();
+  const go = new Go();
+  const result = await WebAssembly.instantiate(msg.wasmBytes, go.importObject);
+  go.run(result.instance);
+  gnataEval = function() {
+    const r = self._gnataEval.apply(null, arguments);
+    if (r instanceof Error) throw r;
+    return r;
+  };
 
-async function loadWasm() {
-  // Stream the fetch so we can track download progress.
-  const resp = await fetch('gnata.wasm');
-  const total = parseInt(resp.headers.get('content-length') || '0', 10);
-  let loaded = 0;
+  importScripts('https://cdn.jsdelivr.net/npm/sql.js@1/dist/sql-wasm.js');
+  const SQL = await initSqlJs({
+    locateFile: function(f) { return 'https://cdn.jsdelivr.net/npm/sql.js@1/dist/' + f; }
+  });
+  db = new SQL.Database();
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = resp.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        loaded += value.byteLength;
-        if (total > 0) {
-          const pct = Math.min(95, (loaded / total) * 100);
-          progressBar.style.width = pct + '%';
-          const kb = Math.round(loaded / 1024);
-          const totalKb = Math.round(total / 1024);
-          statusEl.querySelector('span:last-child').textContent =
-            `${kb} / ${totalKb} KB`;
-        }
-        controller.enqueue(value);
+  db.create_function("jsonata", function(expr, jsonData) {
+    if (expr == null || jsonData == null) return null;
+    try {
+      const raw = gnataEval(String(expr), String(jsonData));
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'number') return parsed;
+        if (typeof parsed === 'boolean') return parsed ? 1 : 0;
+        if (parsed === null) return null;
+        if (typeof parsed === 'string') return parsed;
+        return raw;
+      } catch(e) { return raw; }
+    } catch(e) { return null; }
+  });
+
+  const JQ_CAP = 5000;
+  db.create_aggregate("jsonata_query", {
+    init: function() { return { expr: null, rows: [], total: 0 }; },
+    step: function(state, expr, data) {
+      if (expr == null || data == null) return state;
+      if (!state.expr) state.expr = String(expr);
+      state.total++;
+      if (state.rows.length < JQ_CAP) state.rows.push(String(data));
+      return state;
+    },
+    finalize: function(state) {
+      if (!state.expr || !state.rows.length) return null;
+      if (state.total > state.rows.length) {
+        _jqSampled = { sampled: state.rows.length, total: state.total };
       }
-      controller.close();
+      try {
+        const arr = '[' + state.rows.join(',') + ']';
+        state.rows = null;
+        const raw = gnataEval(state.expr, arr);
+        try { const p = JSON.parse(raw); return typeof p === 'number' ? p : typeof p === 'string' ? p : raw; }
+        catch(e) { return raw; }
+      } catch(e) { return 'Error: ' + e.message; }
     }
   });
 
-  const tracked = new Response(stream, { headers: resp.headers });
-  const result = await WebAssembly.instantiateStreaming(tracked, go.importObject);
+  ready = true;
+  postMessage({ type: 'ready' });
+  while (pending.length) await handle(pending.shift());
+}
+
+async function doGenerate(msg) {
+  const count = msg.count;
+  const pools = msg.pools;
+  const statuses = ['pending','shipped','delivered','cancelled','returned'];
+  const cats = ['Electronics','Books','Clothing','Home','Sports','Food'];
+  const methods = ['standard','express','overnight','economy'];
+
+  let _seed = 12345;
+  const rng = function() { _seed = (_seed * 1664525 + 1013904223) & 0x7fffffff; return _seed / 0x7fffffff; };
+  const pick = function(a) { return a[Math.floor(rng() * a.length)]; };
+
+  const dateStart = new Date('2023-01-01').getTime();
+  const datePool = [];
+  for (let d = 0; d < 730; d++) datePool.push(new Date(dateStart + d * 86400000).toISOString().split('T')[0]);
+
+  postMessage({ type: 'progress', pct: 8, msg: 'Building data templates...' });
+
+  const POOL_SIZE = Math.min(count, 5000);
+  const dataPool = new Array(POOL_SIZE);
+  for (let p = 0; p < POOL_SIZE; p++) {
+    const ni = 1 + Math.floor(rng() * 4);
+    const items = [];
+    let sub = 0;
+    for (let j = 0; j < ni; j++) {
+      const price = Math.round((5 + rng() * 495) * 100) / 100;
+      const qty = 1 + Math.floor(rng() * 4);
+      items.push({ product: pick(pools.products), price: price, quantity: qty, category: pick(cats) });
+      sub += price * qty;
+    }
+    const sc = Math.round((3 + rng() * 22) * 100) / 100;
+    dataPool[p] = JSON.stringify({ items: items, shipping: { method: pick(methods), cost: sc, address: pick(pools.addresses) }, total: Math.round((sub + sc) * 100) / 100 });
+  }
+
+  db.run("DROP TABLE IF EXISTS orders");
+  db.run("DROP TABLE IF EXISTS customers");
+  db.run("CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, email TEXT, city TEXT, country TEXT)");
+  db.run("CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, order_date TEXT, status TEXT, data JSON)");
+
+  const custCount = Math.min(count, 200);
+  db.run("BEGIN");
+  for (let i = 1; i <= custCount; i++) {
+    db.run("INSERT INTO customers VALUES (?,?,?,?,?)", [i, pools.names[i % pools.names.length], pools.emails[i % pools.emails.length], pools.cities[i % pools.cities.length], pools.countries[i % pools.countries.length]]);
+  }
+  db.run("COMMIT");
+
+  const BATCH = 25000;
+  const t0 = performance.now();
+  postMessage({ type: 'progress', pct: 10, msg: 'Inserting rows...' });
+
+  for (let batch = 0; batch < count; batch += BATCH) {
+    db.run("BEGIN");
+    const stmt = db.prepare("INSERT INTO orders VALUES (?,?,?,?,?)");
+    const end = Math.min(batch + BATCH, count);
+    for (let i = batch + 1; i <= end; i++) {
+      stmt.run([i, 1 + Math.floor(rng() * custCount), datePool[Math.floor(rng() * 730)], statuses[Math.floor(rng() * 5)], dataPool[i % POOL_SIZE]]);
+    }
+    stmt.free();
+    db.run("COMMIT");
+    postMessage({ type: 'progress', pct: Math.round((end / count) * 90) + 10, msg: 'Generated ' + end.toLocaleString() + ' of ' + count.toLocaleString() + ' rows...' });
+  }
+
+  const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+  postMessage({ type: 'generated', count: count, custCount: custCount, elapsed: elapsed });
+}
+
+function doQuery(msg) {
+  _jqSampled = null;
+  try {
+    const t0 = performance.now();
+    const res = db.exec(msg.sql);
+    const elapsed = performance.now() - t0;
+    const sampled = _jqSampled;
+    _jqSampled = null;
+    if (res.length) {
+      const last = res[res.length - 1];
+      postMessage({ type: 'queryResult', columns: last.columns, values: last.values.slice(0, 200), totalRows: last.values.length, time: elapsed, sampled: sampled });
+    } else {
+      postMessage({ type: 'queryResult', columns: [], values: [], totalRows: 0, time: elapsed, sampled: sampled, noRows: true });
+    }
+  } catch(e) {
+    const m = e.message || String(e);
+    postMessage({ type: 'queryError', msg: m });
+  }
+}
+</script>
+
+<script>
+// -- Theme --
+const THEME_KEY = 'gnata-playground-theme';
+const SUN_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+const MOON_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+function getPreferredTheme() {
+  const s = localStorage.getItem(THEME_KEY);
+  if (s) return s;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+  document.querySelector('.theme-icon').innerHTML = theme === 'dark' ? SUN_SVG : MOON_SVG;
+}
+applyTheme(getPreferredTheme());
+document.getElementById('themeToggle').addEventListener('click', () => {
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  if (window.switchCMTheme) window.switchCMTheme();
+});
+
+// -- Mode switching --
+let currentMode = 'sqlite';
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.mode;
+    if (mode === currentMode) return;
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(mode === 'sqlite' ? 'sqliteMode' : 'gnataMode').classList.add('active');
+    if (mode === 'gnata' && !window._gnataModeLaunched) {
+      window._gnataModeLaunched = true;
+      if (window._launchGnataMode) window._launchGnataMode();
+    }
+  });
+});
+
+// -- SQLite Tabs --
+document.querySelectorAll('.tab-bar .tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+  });
+});
+function switchToTab(name) {
+  document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(name + 'Tab').classList.add('active');
+}
+
+// -- State --
+const statusEl = document.getElementById('status');
+const progressBar = document.getElementById('progressBar');
+const runBtn = document.getElementById('runBtn');
+const generateBtn = document.getElementById('generateBtn');
+const timingEl = document.getElementById('timing');
+
+window.getSql = () => '';
+window.workerReady = false;
+window.rowCount = 0;
+let selectedCount = 10000;
+
+function updateStatus(cls, text) {
+  statusEl.className = 'status' + (cls === 'ready' ? ' ready' : '');
+  statusEl.querySelector('span:last-child').textContent = text;
+}
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtMs(ms) { return ms < 1 ? (ms * 1000).toFixed(0) + ' \u00b5s' : ms < 1000 ? ms.toFixed(1) + ' ms' : (ms / 1000).toFixed(2) + ' s'; }
+
+// -- Generate row count selection --
+document.querySelectorAll('.gen-group button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedCount = parseInt(btn.dataset.count);
+    document.querySelectorAll('.gen-group button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (window.workerReady) generateBtn.disabled = false;
+  });
+});
+
+// -- Run / Clear (SQLite) --
+runBtn.addEventListener('click', () => { if (window.runQuery) window.runQuery(); });
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    if (currentMode === 'sqlite') {
+      if (window.runQuery) window.runQuery();
+    } else if (currentMode === 'gnata') {
+      if (window.gRunQuery) window.gRunQuery();
+    }
+  }
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  document.getElementById('resultsBody').innerHTML = '<div class="results-message">Run a query to see results.</div>';
+  document.getElementById('resultsFooter').style.display = 'none';
+  document.getElementById('rowDetail').innerHTML = '';
+  timingEl.textContent = '';
+});
+
+// -- Resizable divider --
+(function() {
+  const panels = document.getElementById('panels');
+  const divider = document.getElementById('panelDivider');
+  let dragging = false;
+
+  function positionDivider() {
+    const editorPanel = panels.querySelector('.editor-panel');
+    divider.style.left = (editorPanel.offsetWidth - 2) + 'px';
+  }
+  positionDivider();
+
+  divider.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    dragging = true;
+    divider.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    const rect = panels.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = Math.max(20, Math.min(80, (x / rect.width) * 100));
+    panels.style.gridTemplateColumns = pct + '% 1fr';
+    positionDivider();
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!dragging) return;
+    dragging = false;
+    divider.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+
+  new ResizeObserver(positionDivider).observe(panels);
+})();
+
+window._gnataModeLaunched = false;
+</script>
+
+<!-- ======== CodeMirror + Worker + Queries (SQLite mode) ======== -->
+<script type="module">
+try {
+
+const progressBar = document.getElementById('progressBar');
+const statusEl = document.getElementById('status');
+progressBar.style.opacity = '1';
+progressBar.style.width = '2%';
+statusEl.querySelector('span:last-child').textContent = 'Loading editor...';
+
+const { EditorView, keymap, lineNumbers } = await import('https://esm.sh/@codemirror/view@6');
+progressBar.style.width = '8%';
+const { EditorState, Compartment } = await import('https://esm.sh/@codemirror/state@6');
+progressBar.style.width = '12%';
+const { defaultKeymap, history, historyKeymap } = await import('https://esm.sh/@codemirror/commands@6');
+progressBar.style.width = '16%';
+const { syntaxHighlighting, HighlightStyle } = await import('https://esm.sh/@codemirror/language@6');
+progressBar.style.width = '20%';
+const { tags: t } = await import('https://esm.sh/@lezer/highlight@1');
+progressBar.style.width = '24%';
+const { sql, SQLite } = await import('https://esm.sh/@codemirror/lang-sql@6');
+progressBar.style.width = '28%';
+statusEl.querySelector('span:last-child').textContent = 'Editor ready, loading WASM...';
+
+// -- CM Themes (TokyoNight Night / Day) --
+const dark = { bg:'#1a1b26',fg:'#c0caf5',comment:'#565f89',string:'#9ece6a',number:'#ff9e64',keyword:'#bb9af7',func:'#7aa2f7',variable:'#9ece6a',operator:'#89ddff',error:'#f7768e',select:'#283457',cursor:'#c0caf5',property:'#73daca',bracket:'#698098' };
+const light = { bg:'#e1e2e7',fg:'#3760bf',comment:'#848cb5',string:'#587539',number:'#b15c00',keyword:'#7847bd',func:'#2e7de9',variable:'#587539',operator:'#d20065',error:'#f52a65',select:'#b6bfe2',cursor:'#3760bf',property:'#118c74',bracket:'#848cb5' };
+
+function isDark() { return document.documentElement.getAttribute('data-theme') !== 'light'; }
+const themeComp = new Compartment();
+
+function mkTheme(c, d) {
+  return EditorView.theme({
+    '&': { backgroundColor: c.bg, color: c.fg },
+    '.cm-content': { caretColor: c.cursor },
+    '.cm-cursor, .cm-dropCursor': { borderLeftColor: c.cursor },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { background: c.select + ' !important' },
+    '.cm-activeLine': { backgroundColor: d ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)' },
+    '.cm-gutters': { backgroundColor: c.bg, color: c.comment, borderRight: '1px solid ' + (d ? '#292e42' : '#c4c8da') },
+    '.cm-activeLineGutter': { backgroundColor: 'transparent' },
+  }, { dark: d });
+}
+function mkHL(c) {
+  return HighlightStyle.define([
+    { tag: t.keyword, color: c.keyword, fontWeight: '600' },
+    { tag: t.operator, color: c.operator },
+    { tag: t.string, color: c.string },
+    { tag: t.number, color: c.number },
+    { tag: t.bool, color: c.number },
+    { tag: t.null, color: c.comment },
+    { tag: t.blockComment, color: c.comment },
+    { tag: t.lineComment, color: c.comment },
+    { tag: t.variableName, color: c.fg },
+    { tag: t.typeName, color: c.func },
+    { tag: t.function(t.variableName), color: c.func },
+    { tag: t.special(t.variableName), color: c.variable },
+    { tag: t.propertyName, color: c.property },
+    { tag: t.paren, color: c.bracket },
+    { tag: t.squareBracket, color: c.bracket },
+    { tag: t.separator, color: c.comment },
+  ]);
+}
+function themeExts() { const c = isDark() ? dark : light; return [mkTheme(c, isDark()), syntaxHighlighting(mkHL(c))]; }
+
+window.switchCMTheme = () => {
+  sqlView.dispatch({ effects: themeComp.reconfigure(themeExts()) });
+  if (window._gSwitchCMTheme) window._gSwitchCMTheme();
+};
+
+// -- Queries --
+const QUERIES = [
+  {
+    name: "Extract Fields",
+    sql: `-- jsonata() scalar: navigate nested JSON with dot paths
+-- No json_extract() chains needed
+SELECT id, status,
+       jsonata('items.product', data) as products,
+       jsonata('shipping.method', data) as ship_method,
+       jsonata('shipping.cost', data) as ship_cost
+FROM orders LIMIT 20;`
+  },
+  {
+    name: "Per-Row Math",
+    sql: `-- Auto-mapping: items.(price * quantity) computes per-item then collects
+-- $sum, $count work inline on nested arrays -- no subqueries needed
+SELECT id, status,
+       jsonata('$round($sum(items.(price * quantity)), 2)', data) as subtotal,
+       jsonata('shipping.cost', data) as shipping,
+       jsonata('total', data) as total,
+       jsonata('$count(items)', data) as num_items,
+       jsonata('items[price > 200].product', data) as premium_items
+FROM orders LIMIT 20;`
+  },
+  {
+    name: "Revenue by Status",
+    sql: `-- One jsonata_query per group computes all aggregates at once
+-- Native gnata: single pass, O(1) memory, batch field extraction per group
+SELECT status, count(*) as orders,
+       jsonata_query('{
+         "revenue":  $round($sum(total), 2),
+         "avg":      $round($average(total), 2),
+         "min":      $min(total),
+         "max":      $max(total)
+       }', data) as stats
+FROM orders GROUP BY status ORDER BY orders DESC;`
+  },
+  {
+    name: "Dashboard",
+    sql: `-- One expression computes a full dashboard report
+-- Native gnata: single pass, O(1) memory, batch field extraction
+SELECT jsonata_query('{
+  "total_orders":    $count($),
+  "total_revenue":   $round($sum(total), 2),
+  "avg_order_value": $round($average(total), 2),
+  "min_order":       $min(total),
+  "max_order":       $max(total),
+  "avg_items":       $round($average($map($, function($v){ $count($v.items) })), 2)
+}', data) as dashboard
+FROM orders;`
+  },
+  {
+    name: "Filtered Aggs",
+    sql: `-- $filter with lambdas: ClickHouse-style conditional aggregation
+-- All filters in one expression -- native gnata shares identical predicates
+SELECT jsonata_query('{
+  "total_orders":       $count($),
+  "high_value_revenue": $round($sum($filter($, function($v){$v.total > 500}).total), 2),
+  "high_value_count":   $count($filter($, function($v){$v.total > 500})),
+  "small_orders":       $count($filter($, function($v){$v.total <= 100})),
+  "avg_mid_plus":       $round($average($filter($, function($v){$v.total > 200}).total), 2)
+}', data) as report
+FROM orders;`
+  },
+  {
+    name: "Top Customers",
+    sql: `-- SQL JOIN for relational work + gnata for JSON aggregation
+SELECT c.name, c.city,
+       count(*) as orders,
+       jsonata_query('{
+         "spent":   $round($sum(total), 2),
+         "avg":     $round($average(total), 2),
+         "biggest": $max(total)
+       }', data) as stats
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+GROUP BY c.id ORDER BY orders DESC LIMIT 15;`
+  },
+  {
+    name: "Category Stats",
+    sql: `-- Aggregation across nested arrays
+-- items.category reaches into every order's items array automatically
+SELECT jsonata_query('{
+  "unique_categories":   $count($distinct(items.category)),
+  "total_quantity_sold": $sum(items.quantity),
+  "avg_items_per_order": $round($average($map($, function($v){ $count($v.items) })), 2),
+  "unique_products":     $count($distinct(items.product))
+}', data) as stats
+FROM orders;`
+  },
+  {
+    name: "Multi-Column",
+    sql: `-- Multi-column: combine data from different tables in one expression
+-- Native extension supports key-value pairs directly:
+--   jsonata(expr, 'name', c.name, 'city', c.city, 'data', o.data)
+-- Playground uses json_object() to achieve the same result:
+SELECT jsonata(
+  'name & " (" & city & ") \u2014 $" & $string(data.total) & " via " & data.shipping.method',
+  json_object('name', c.name, 'city', c.city, 'data', o.data)
+) as summary,
+  jsonata(
+  '{"customer": name, "email": email, "items": $count(data.items), "total": data.total}',
+  json_object('name', c.name, 'email', c.email, 'data', o.data)
+) as detail
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+LIMIT 15;`
+  },
+  {
+    name: "String Transforms",
+    sql: `-- String functions: $uppercase, $lowercase, $join, $substring, &
+-- Applied per-row as scalar transforms on nested JSON
+SELECT id,
+       jsonata('$uppercase(items[0].product)', data) as first_product_upper,
+       jsonata('$join(items.category, ", ")', data) as categories,
+       jsonata('$uppercase(shipping.method) & " (" & $string(shipping.cost) & ")"', data)
+         as shipping_label,
+       jsonata('$substring(shipping.address, 0, 25) & "..."', data) as short_addr
+FROM orders LIMIT 15;`
+  },
+  {
+    name: "Monthly Revenue",
+    sql: `-- SQL GROUP BY month + single gnata expression per group
+SELECT substr(order_date, 1, 7) as month,
+       count(*) as orders,
+       jsonata_query('{
+         "revenue":  $round($sum(total), 2),
+         "avg":      $round($average(total), 2),
+         "peak":     $max(total)
+       }', data) as stats
+FROM orders GROUP BY month ORDER BY month;`
+  }
+];
+
+// -- SQL Editor --
+document.getElementById('sqlEditor').innerHTML = '';
+const sqlView = new EditorView({
+  state: EditorState.create({
+    doc: QUERIES[0].sql,
+    extensions: [
+      lineNumbers(),
+      keymap.of([...defaultKeymap, ...historyKeymap]),
+      history(),
+      sql({ dialect: SQLite }),
+      themeComp.of(themeExts()),
+      EditorView.domEventHandlers({
+        keydown(e) {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); if (window.runQuery) window.runQuery(); return true; }
+        }
+      }),
+    ],
+  }),
+  parent: document.getElementById('sqlEditor'),
+});
+
+window.getSql = () => sqlView.state.doc.toString();
+
+let activeQueryIdx = 0;
+
+function loadQuery(idx) {
+  const q = QUERIES[idx];
+  if (!q) return;
+  activeQueryIdx = idx;
+  sqlView.dispatch({ changes: { from: 0, to: sqlView.state.doc.length, insert: q.sql } });
+  document.querySelectorAll('#queryPills .query-pill').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+// Build query pills
+const pillsEl = document.getElementById('queryPills');
+QUERIES.forEach((q, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'query-pill' + (i === 0 ? ' active' : '');
+  btn.textContent = q.name;
+  btn.addEventListener('click', () => loadQuery(i));
+  pillsEl.appendChild(btn);
+});
+
+// -- Web Worker --
+updateStatus('', 'Loading WASM...');
+progressBar.style.width = '30%';
+
+const [wasmExecText, wasmBytes] = await Promise.all([
+  fetch('wasm_exec.js').then(r => r.text()),
+  (async () => {
+    const resp = await fetch('gnata.wasm');
+    const total = parseInt(resp.headers.get('content-length') || '0', 10);
+    let loaded = 0;
+    const chunks = [];
+    const reader = resp.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      loaded += value.byteLength;
+      if (total > 0) progressBar.style.width = (30 + Math.min(25, (loaded / total) * 25)) + '%';
+    }
+    const buf = new Uint8Array(loaded);
+    let off = 0;
+    for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
+    return buf.buffer;
+  })()
+]);
+
+progressBar.style.width = '55%';
+updateStatus('', 'Starting worker...');
+
+const workerSrc = document.getElementById('workerSrc').textContent;
+const blob = new Blob([workerSrc], { type: 'application/javascript' });
+const worker = new Worker(URL.createObjectURL(blob));
+
+worker.postMessage({ type: 'init', wasmExecText, wasmBytes }, [wasmBytes]);
+
+worker.onmessage = function(e) {
+  const msg = e.data;
+
+  if (msg.type === 'ready') {
+    window.workerReady = true;
+    updateStatus('ready', 'Ready');
+    progressBar.style.width = '100%';
+    setTimeout(() => { progressBar.style.opacity = '0'; }, 300);
+    runBtn.disabled = false;
+    if (selectedCount) generateBtn.disabled = false;
+  }
+
+  else if (msg.type === 'progress') {
+    progressBar.style.opacity = '1';
+    progressBar.style.width = msg.pct + '%';
+    updateStatus('', msg.msg);
+  }
+
+  else if (msg.type === 'generated') {
+    window.rowCount = msg.count;
+    document.getElementById('genHint').style.display = 'none';
+
+    updateStatus('ready', msg.count.toLocaleString() + ' orders, ' + msg.custCount + ' customers (' + msg.elapsed + 's)');
+    progressBar.style.width = '100%';
+    setTimeout(() => { progressBar.style.opacity = '0'; }, 300);
+    updateSchema(msg.count, msg.custCount);
+    generateBtn.disabled = false;
+    runBtn.disabled = false;
+    window.runQuery();
+  }
+
+  else if (msg.type === 'queryResult') {
+    renderResult(msg);
+  }
+
+  else if (msg.type === 'queryError') {
+    const body = document.getElementById('resultsBody');
+    const footer = document.getElementById('resultsFooter');
+    footer.style.display = 'none';
+    timingEl.textContent = '';
+    if (msg.msg.includes('no such table')) {
+      body.innerHTML = '<div class="results-message">Select a row count and click <strong>Generate</strong> to create test data first.</div>';
+    } else {
+      body.innerHTML = '<div class="results-message error">' + escapeHtml(msg.msg) + '</div>';
+    }
+    switchToTab('results');
+  }
+
+  else if (msg.type === 'error') {
+    document.getElementById('resultsBody').innerHTML = '<div class="results-message error">' + escapeHtml(msg.msg) + '</div>';
+    switchToTab('results');
+  }
+};
+
+// -- Run query --
+window.runQuery = function() {
+  const sqlText = window.getSql().trim();
+  if (!sqlText || !window.workerReady) return;
+  if (!window.rowCount) {
+    // No data yet — generate first, then the 'generated' handler will call runQuery
+    generateBtn.click();
+    return;
+  }
+  switchToTab('results');
+  document.getElementById('resultsBody').innerHTML = '<div class="results-message"><span class="spinner"></span> Running...</div>';
+  document.getElementById('resultsFooter').style.display = 'none';
+  timingEl.textContent = '';
+  worker.postMessage({ type: 'query', sql: sqlText });
+};
+
+function renderResult(msg) {
+  const body = document.getElementById('resultsBody');
+  const footer = document.getElementById('resultsFooter');
+  const detail = document.getElementById('rowDetail');
+  detail.innerHTML = '';
+
+  let timeStr = fmtMs(msg.time);
+  if (msg.sampled) {
+    timeStr += '  \u2022  jsonata_query sampled ' + msg.sampled.sampled.toLocaleString() + ' of ' + msg.sampled.total.toLocaleString() + ' rows';
+  }
+  timingEl.textContent = timeStr;
+
+  if (msg.noRows) {
+    body.innerHTML = '<div class="results-message">Query executed successfully (no rows returned).</div>';
+    footer.style.display = 'none';
+    return;
+  }
+
+  const cols = msg.columns;
+  const rows = msg.values;
+
+  const queryName = QUERIES[activeQueryIdx] ? QUERIES[activeQueryIdx].name : 'Query';
+  const rowLabel = window.rowCount ? Number(window.rowCount).toLocaleString() + ' rows' : '';
+  const barPct = Math.min(100, Math.max(12, msg.time < 10 ? 15 : msg.time < 100 ? 40 : msg.time < 500 ? 65 : 90));
+  let banner = '<div class="bench-banner" style="flex-wrap:wrap">';
+  banner += '<div class="bench-title">' + escapeHtml(queryName) + (rowLabel ? ' <span>' + rowLabel + '</span>' : '') + '</div>';
+  banner += '<div class="bench-bar-track"><div class="bench-bar" style="width:' + barPct + '%">' + fmtMs(msg.time) + '</div></div>';
+  banner += '<div class="bench-tag">gnata</div>';
+  banner += '<div style="width:100%;font-size:11px;color:var(--muted)">Native gnata extension is 50\u2013100x faster than this in-browser WASM benchmark</div>';
+  banner += '</div>';
+
+  let html = banner;
+  html += '<div class="results-table-wrap"><table class="results-table"><thead><tr>';
+  for (const c of cols) html += '<th>' + escapeHtml(c) + '</th>';
+  html += '</tr></thead><tbody>';
+  for (let ri = 0; ri < rows.length; ri++) {
+    html += '<tr data-row="' + ri + '">';
+    for (const cell of rows[ri]) {
+      if (cell === null) html += '<td><span class="null-val">NULL</span></td>';
+      else if (typeof cell === 'number') html += '<td class="num-val">' + cell + '</td>';
+      else if (typeof cell === 'string' && (cell[0] === '{' || cell[0] === '['))
+        html += '<td><span class="json-val">' + escapeHtml(cell) + '</span></td>';
+      else html += '<td>' + escapeHtml(String(cell)) + '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  body.innerHTML = html;
+
+  function closeDetail() {
+    detail.innerHTML = '';
+    body.querySelectorAll('tr.focused').forEach(r => r.classList.remove('focused'));
+  }
+
+  body.addEventListener('click', function(e) {
+    const tr = e.target.closest('tr[data-row]');
+    if (!tr) { closeDetail(); return; }
+    const ri = parseInt(tr.dataset.row);
+    body.querySelectorAll('tr.focused').forEach(r => r.classList.remove('focused'));
+    tr.classList.add('focused');
+    const rowData = {};
+    for (let ci = 0; ci < cols.length; ci++) {
+      let val = rows[ri][ci];
+      if (typeof val === 'string') { try { val = JSON.parse(val); } catch(e) {} }
+      rowData[cols[ci]] = val;
+    }
+    detail.innerHTML = '<div class="row-detail"><div class="row-detail-header"><span>Row ' + (ri + 1) + '</span><button class="row-detail-close" title="Close">&times;</button></div><pre>' + escapeHtml(JSON.stringify(rowData, null, 2)) + '</pre></div>';
+    detail.querySelector('.row-detail-close').addEventListener('click', closeDetail);
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && detail.innerHTML) { closeDetail(); }
+  });
+
+  footer.style.display = 'flex';
+  footer.innerHTML = rows.length < msg.totalRows
+    ? '<span>Showing ' + rows.length + ' of ' + msg.totalRows.toLocaleString() + ' rows</span><span>' + fmtMs(msg.time) + '</span>'
+    : '<span>' + msg.totalRows.toLocaleString() + ' row' + (msg.totalRows !== 1 ? 's' : '') + '</span><span>' + fmtMs(msg.time) + '</span>';
+}
+
+// -- Generate --
+let fakerMod = null;
+
+generateBtn.addEventListener('click', async () => {
+  if (!selectedCount || !window.workerReady) return;
+  generateBtn.disabled = true;
+  runBtn.disabled = true;
+
+  if (!fakerMod) {
+    progressBar.style.opacity = '1';
+    progressBar.style.width = '5%';
+    updateStatus('', 'Loading faker...');
+    const mod = await import('https://esm.sh/@faker-js/faker/locale/en');
+    fakerMod = mod.faker;
+  }
+  fakerMod.seed(42);
+
+  const pools = {
+    products: Array.from({length: 200}, () => fakerMod.commerce.productName()),
+    addresses: Array.from({length: 100}, () => fakerMod.location.streetAddress()),
+    names: Array.from({length: 200}, () => fakerMod.person.fullName()),
+    emails: Array.from({length: 200}, () => fakerMod.internet.email()),
+    cities: Array.from({length: 60}, () => fakerMod.location.city()),
+    countries: Array.from({length: 30}, () => fakerMod.location.country()),
+  };
+
+  progressBar.style.opacity = '1';
+  progressBar.style.width = '5%';
+  updateStatus('', 'Generating pools...');
+  worker.postMessage({ type: 'generate', count: selectedCount, pools });
+});
+
+function updateSchema(count, custCount) {
+  document.getElementById('schemaInfo').innerHTML = `
+    <h3>customers</h3>
+    <table class="schema-table">
+      <tr><td>id</td><td>INTEGER PK</td></tr>
+      <tr><td>name</td><td>TEXT</td></tr>
+      <tr><td>email</td><td>TEXT</td></tr>
+      <tr><td>city</td><td>TEXT</td></tr>
+      <tr><td>country</td><td>TEXT</td></tr>
+    </table>
+    <span class="row-count">${custCount} rows</span>
+
+    <h3>orders</h3>
+    <table class="schema-table">
+      <tr><td>id</td><td>INTEGER PK</td></tr>
+      <tr><td>customer_id</td><td>INTEGER FK</td></tr>
+      <tr><td>order_date</td><td>TEXT</td></tr>
+      <tr><td>status</td><td>TEXT</td></tr>
+      <tr><td>data</td><td>JSON</td></tr>
+    </table>
+    <span class="row-count">${count.toLocaleString()} rows</span>
+
+    <h3>data (JSON column)</h3>
+    <pre>{
+  "items": [
+    { "product", "price", "quantity", "category" }
+  ],
+  "shipping": { "method", "cost", "address" },
+  "total": number
+}</pre>
+  `;
+}
+
+} catch(e) {
+  console.error('Module init error:', e);
+  document.getElementById('resultsBody').innerHTML = '<div class="results-message error">Init error: ' + e.message + '</div>';
+}
+</script>
+
+<!-- ======== gnata (JSONata) Mode -- Lazy loaded ======== -->
+<script>
+// gnata mode examples
+window._gnataExamples = {
+  invoice: {
+    expr: '$sum(Account.Order.Product.(Price * Quantity))',
+    data: '{\n  "Account": {\n    "Name": "Firefly",\n    "Order": [\n      {\n        "OrderID": "order103",\n        "Product": [\n          { "Name": "Bowler Hat", "Price": 34.45, "Quantity": 2 },\n          { "Name": "Trilby hat", "Price": 21.67, "Quantity": 1 }\n        ]\n      },\n      {\n        "OrderID": "order104",\n        "Product": [\n          { "Name": "Cloak", "Price": 107.99, "Quantity": 1 }\n        ]\n      }\n    ]\n  }\n}'
+  },
+  "filter & map": {
+    expr: '$filter(users, function($u) { $u.age >= 21 }).name',
+    data: '{\n  "users": [\n    { "name": "Alice", "age": 30, "role": "admin" },\n    { "name": "Bob", "age": 17, "role": "viewer" },\n    { "name": "Carol", "age": 25, "role": "editor" },\n    { "name": "Dave", "age": 19, "role": "viewer" }\n  ]\n}'
+  },
+  "predicate": {
+    expr: 'event.action = "login" and event.severity > 3',
+    data: '{\n  "event": {\n    "action": "login",\n    "severity": 5,\n    "user": "admin@example.com",\n    "metadata": { "ip": "10.0.0.1", "geo": "US" }\n  }\n}'
+  },
+  "transform": {
+    expr: 'orders.{\n  "id": id,\n  "customer": customer.name & " (" & customer.email & ")",\n  "total": $round($sum(items.(price * qty)), 2),\n  "items": $count(items),\n  "biggest": $max(items.price)\n}',
+    data: '{\n  "orders": [\n    {\n      "id": "ORD-001",\n      "customer": { "name": "Acme Corp", "email": "purchasing@acme.com" },\n      "items": [\n        { "sku": "WDG-10", "price": 29.99, "qty": 5 },\n        { "sku": "SPR-03", "price": 149.00, "qty": 1 },\n        { "sku": "BLT-07", "price": 8.50, "qty": 12 }\n      ]\n    },\n    {\n      "id": "ORD-002",\n      "customer": { "name": "Globex", "email": "ops@globex.net" },\n      "items": [\n        { "sku": "WDG-10", "price": 29.99, "qty": 20 },\n        { "sku": "MTR-01", "price": 450.00, "qty": 2 }\n      ]\n    }\n  ]\n}'
+  },
+  "group & agg": {
+    expr: '$reduce(logs, function($acc, $v) {\n  $merge([$acc, {\n    $v.level: ($lookup($acc, $v.level) ? $lookup($acc, $v.level) : 0) + 1\n  }])\n}, {})',
+    data: '{\n  "logs": [\n    { "ts": "2024-01-15T08:30:00Z", "level": "error", "msg": "Connection refused", "service": "api" },\n    { "ts": "2024-01-15T08:30:05Z", "level": "warn", "msg": "Retry attempt 1", "service": "api" },\n    { "ts": "2024-01-15T08:30:10Z", "level": "info", "msg": "Connected", "service": "api" },\n    { "ts": "2024-01-15T08:31:00Z", "level": "error", "msg": "Timeout", "service": "worker" },\n    { "ts": "2024-01-15T08:31:15Z", "level": "info", "msg": "Job completed", "service": "worker" },\n    { "ts": "2024-01-15T08:32:00Z", "level": "warn", "msg": "High memory", "service": "api" },\n    { "ts": "2024-01-15T08:32:30Z", "level": "error", "msg": "OOM killed", "service": "worker" }\n  ]\n}'
+  },
+  "nested nav": {
+    expr: '{\n  "total_endpoints": $count(services.endpoints),\n  "slow_p99": services.endpoints[latency.p99 > 200].{ "path": method & " " & path, "p99": latency.p99 },\n  "error_rate": $round($average(services.endpoints.error_rate), 2)\n}',
+    data: '{\n  "services": [\n    {\n      "name": "auth-service",\n      "endpoints": [\n        { "method": "POST", "path": "/login", "latency": { "p50": 45, "p99": 320 }, "error_rate": 0.02 },\n        { "method": "POST", "path": "/refresh", "latency": { "p50": 12, "p99": 85 }, "error_rate": 0.001 }\n      ]\n    },\n    {\n      "name": "data-service",\n      "endpoints": [\n        { "method": "GET", "path": "/query", "latency": { "p50": 180, "p99": 950 }, "error_rate": 0.05 },\n        { "method": "POST", "path": "/ingest", "latency": { "p50": 25, "p99": 110 }, "error_rate": 0.01 },\n        { "method": "GET", "path": "/health", "latency": { "p50": 2, "p99": 8 }, "error_rate": 0.0 }\n      ]\n    }\n  ]\n}'
+  },
+  "string ops": {
+    expr: 'employees.(\n  $uppercase($substringBefore(name, " \")) & \", \" &\n  department & \" | \" &\n  $join(skills, \", \") &\n  (active ? \" [ACTIVE]\" : \" [INACTIVE]\")\n)',
+    data: '{\n  "employees": [\n    { "name": "Alice Johnson", "department": "Engineering", "skills": ["Go", "Rust", "K8s"], "active": true },\n    { "name": "Bob Martinez", "department": "Data", "skills": ["Python", "SQL", "Spark"], "active": true },\n    { "name": "Carol Chen", "department": "Security", "skills": ["Pentesting", "SIEM", "Forensics"], "active": false },\n    { "name": "Dave Kim", "department": "Engineering", "skills": ["TypeScript", "React", "Node"], "active": true }\n  ]\n}'
+  },
+  "pipeline": {
+    expr: 'records\n  ~> $filter(function($r) { $r.status != \"cancelled\" })\n  ~> $map(function($r) { $merge([$r, {\"total\": $r.price * $r.qty}]) })\n  ~> $sort(function($a, $b) { $b.total - $a.total })\n  ~> $map(function($r) { $r.product & \": $\" & $string($r.total) })',
+    data: '{\n  "records": [\n    { "product": "Laptop", "price": 999, "qty": 3, "status": "shipped" },\n    { "product": "Mouse", "price": 29, "qty": 50, "status": "delivered" },\n    { "product": "Monitor", "price": 450, "qty": 5, "status": "cancelled" },\n    { "product": "Keyboard", "price": 75, "qty": 20, "status": "shipped" },\n    { "product": "Headset", "price": 199, "qty": 8, "status": "delivered" },\n    { "product": "Webcam", "price": 89, "qty": 15, "status": "shipped" }\n  ]\n}'
+  }
+};
+
+window._launchGnataMode = async function() {
+  const gProgressBar = document.getElementById('progressBar');
+  const gStatusEl = document.getElementById('status');
+  gProgressBar.style.opacity = '1';
+  gProgressBar.style.width = '5%';
+  gStatusEl.classList.remove('ready');
+  gStatusEl.querySelector('span:last-child').textContent = 'Loading gnata WASM...';
+
+  const gTimingEl = document.getElementById('g-timing');
+  const gRunBtn = document.getElementById('g-runBtn');
+
+  // --- Load WASM on main thread ---
+  const wasmExecScript = document.createElement('script');
+  wasmExecScript.src = 'wasm_exec.js';
+  await new Promise((resolve, reject) => { wasmExecScript.onload = resolve; wasmExecScript.onerror = reject; document.head.appendChild(wasmExecScript); });
+  gProgressBar.style.width = '20%';
+
+  const go = new Go();
+  const resp = await fetch('gnata.wasm');
+  const result = await WebAssembly.instantiateStreaming(resp, go.importObject);
+  gProgressBar.style.width = '45%';
+  gStatusEl.querySelector('span:last-child').textContent = 'Loading editor...';
   const wrapWasm = fn => (...args) => { const r = fn(...args); if (r instanceof Error) throw r; return r; };
   window.gnataEval          = wrapWasm((...a) => window._gnataEval(...a));
   window.gnataCompile       = wrapWasm((...a) => window._gnataCompile(...a));
   window.gnataEvalHandle    = wrapWasm((...a) => window._gnataEvalHandle(...a));
   window.gnataReleaseHandle = wrapWasm((...a) => window._gnataReleaseHandle(...a));
-
   go.run(result.instance).catch(err => {
-    statusEl.classList.remove('ready');
-    statusEl.querySelector('span:last-child').textContent = 'Runtime crash';
-    resultEl.textContent = `WASM runtime exited unexpectedly: ${err}`;
-    resultEl.className = 'error';
-    runBtn.disabled = true;
+    console.error('gnata WASM runtime exited:', err);
   });
 
-  progressBar.style.width = '100%';
-  setTimeout(() => { progressBar.style.opacity = '0'; progressBar.style.transition += ', opacity 0.4s'; }, 200);
-  statusEl.classList.add('ready');
-  statusEl.querySelector('span:last-child').textContent = 'Ready';
-  runBtn.disabled = false;
-  // Run the pre-filled example immediately once WASM is ready.
-  evaluate();
-}
-
-loadWasm().catch(err => {
-  statusEl.querySelector('span:last-child').textContent = 'Failed to load';
-  resultEl.textContent = `Failed to load WASM module: ${err.message || err}`;
-  resultEl.className = 'error';
-  console.error('WASM load error:', err);
-});
-
-function evaluate() {
-  const expr = exprEl.value.trim();
-  const jsonStr = inputEl.value.trim();
-
-  if (!expr) {
-    resultEl.textContent = '';
-    timingEl.textContent = '';
-    return;
-  }
-
-  try {
-    const t0 = performance.now();
-    const raw = gnataEval(expr, jsonStr || 'null');
-    const elapsed = performance.now() - t0;
-
-    let parsed;
-    try { parsed = JSON.parse(raw); } catch { parsed = raw; }
-    resultEl.textContent = typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
-    resultEl.className = 'success';
-    timingEl.textContent = elapsed < 1 ? `${(elapsed * 1000).toFixed(0)} \u00b5s` : `${elapsed.toFixed(2)} ms`;
-  } catch (e) {
-    resultEl.textContent = e.message || String(e);
-    resultEl.className = 'error';
-    timingEl.textContent = '';
-  }
-}
-
-// Live evaluation: debounce so we don't hammer the WASM on every keystroke.
-let debounceTimer = null;
-function scheduleEval() {
-  clearTimeout(debounceTimer);
-  timingEl.textContent = '';
-  debounceTimer = setTimeout(evaluate, 300);
-}
-
-exprEl.addEventListener('input', scheduleEval);
-inputEl.addEventListener('input', scheduleEval);
-
-runBtn.addEventListener('click', () => {
-  clearTimeout(debounceTimer);
-  evaluate();
-});
-
-document.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-    e.preventDefault();
-    clearTimeout(debounceTimer);
-    evaluate();
-  }
-});
-
-clearBtn.addEventListener('click', () => {
-  clearTimeout(debounceTimer);
-  exprEl.value = '';
-  inputEl.value = '';
-  resultEl.textContent = '';
-  resultEl.className = '';
-  timingEl.textContent = '';
-});
-
-document.querySelectorAll('.example-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    const ex = examples[chip.dataset.example];
-    if (ex) {
-      clearTimeout(debounceTimer);
-      exprEl.value = ex.expr;
-      inputEl.value = ex.data;
-      evaluate();
+  // --- Load LSP WASM ---
+  (async function loadLspWasm() {
+    try {
+      const StdGo = window.Go;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'lsp-wasm_exec.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      const TinyGo = window.Go;
+      window.Go = StdGo;
+      const lspGo = new TinyGo();
+      const lspResp = await fetch('gnata-lsp.wasm');
+      const lspResult = await WebAssembly.instantiateStreaming(lspResp, lspGo.importObject);
+      lspGo.run(lspResult.instance);
+      window._gLspReady = true;
+    } catch (e) {
+      console.warn('LSP WASM not available:', e.message || e);
     }
+  })();
+
+  // --- Evaluator ---
+  window.gGetExpr = () => '';
+  window.gSetExpr = () => {};
+  window.gGetInput = () => '';
+  window.gSetInput = () => {};
+  window.gSetResult = () => {};
+
+  function gEvaluate() {
+    const expr = window.gGetExpr().trim();
+    const jsonStr = window.gGetInput().trim();
+    if (!expr) { window.gSetResult(''); gTimingEl.textContent = ''; return; }
+    try {
+      const t0 = performance.now();
+      const raw = gnataEval(expr, jsonStr || 'null');
+      const elapsed = performance.now() - t0;
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch { parsed = raw; }
+      const text = typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+      window.gSetResult(text, 'success');
+      gTimingEl.textContent = elapsed < 1 ? (elapsed * 1000).toFixed(0) + ' \u00b5s' : elapsed.toFixed(2) + ' ms';
+    } catch (e) {
+      window.gSetResult(e.message || String(e), 'error');
+      gTimingEl.textContent = '';
+    }
+  }
+  window.gEvaluate = gEvaluate;
+
+  let gDebounceTimer = null;
+  function gScheduleEval() {
+    clearTimeout(gDebounceTimer);
+    gTimingEl.textContent = '';
+    gDebounceTimer = setTimeout(gEvaluate, 300);
+  }
+
+  window.gRunQuery = function() { clearTimeout(gDebounceTimer); gEvaluate(); };
+
+  gRunBtn.addEventListener('click', () => { window.gRunQuery(); });
+  document.getElementById('g-clearBtn').addEventListener('click', () => {
+    clearTimeout(gDebounceTimer);
+    window.gSetExpr('');
+    window.gSetInput('');
+    window.gSetResult('');
+    gTimingEl.textContent = '';
   });
-});
+
+  // Build example pills
+  const gPillsEl = document.getElementById('g-queryPills');
+  const gExamples = window._gnataExamples;
+  const exKeys = Object.keys(gExamples);
+  exKeys.forEach((key, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'query-pill';
+    btn.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+    btn.addEventListener('click', () => {
+      clearTimeout(gDebounceTimer);
+      const ex = gExamples[key];
+      window.gSetExpr(ex.expr);
+      window.gSetInput(ex.data);
+      gEvaluate();
+      gPillsEl.querySelectorAll('.query-pill').forEach((p, pi) => p.classList.toggle('active', pi === i));
+    });
+    gPillsEl.appendChild(btn);
+  });
+
+  // --- CodeMirror for gnata mode ---
+  gProgressBar.style.width = '50%';
+  const { EditorView, keymap, placeholder, hoverTooltip } = await import('https://esm.sh/@codemirror/view@6');
+  gProgressBar.style.width = '55%';
+  const { EditorState, Compartment } = await import('https://esm.sh/@codemirror/state@6');
+  const { defaultKeymap, history, historyKeymap } = await import('https://esm.sh/@codemirror/commands@6');
+  gProgressBar.style.width = '65%';
+  const { syntaxHighlighting, HighlightStyle, StreamLanguage } = await import('https://esm.sh/@codemirror/language@6');
+  const { autocompletion } = await import('https://esm.sh/@codemirror/autocomplete@6');
+  gProgressBar.style.width = '75%';
+  const { linter } = await import('https://esm.sh/@codemirror/lint@6');
+  const { tags: t } = await import('https://esm.sh/@lezer/highlight@1');
+  const { json } = await import('https://esm.sh/@codemirror/lang-json@6');
+  gProgressBar.style.width = '85%';
+
+  // --- TokyoNight theme (same as SQLite mode) ---
+  const dark = { bg:'#1a1b26',fg:'#c0caf5',comment:'#565f89',string:'#9ece6a',number:'#ff9e64',keyword:'#bb9af7',func:'#7aa2f7',variable:'#B5E600',operator:'#89ddff',error:'#f7768e',select:'#283457',cursor:'#c0caf5',property:'#73daca',bracket:'#698098' };
+  const light = { bg:'#e1e2e7',fg:'#3760bf',comment:'#848cb5',string:'#587539',number:'#b15c00',keyword:'#7847bd',func:'#2e7de9',variable:'#2563eb',operator:'#d20065',error:'#f52a65',select:'#b6bfe2',cursor:'#3760bf',property:'#118c74',bracket:'#848cb5' };
+
+  function isDark() { return document.documentElement.getAttribute('data-theme') !== 'light'; }
+
+  const gThemeComp = new Compartment();
+  const gInputThemeComp = new Compartment();
+  const gResultThemeComp = new Compartment();
+
+  function gMkTheme(c, d) {
+    return EditorView.theme({
+      '&': { backgroundColor: c.bg, color: c.fg },
+      '.cm-content': { caretColor: c.cursor },
+      '.cm-cursor, .cm-dropCursor': { borderLeftColor: c.cursor },
+      '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { background: c.select + ' !important' },
+      '.cm-activeLine': { backgroundColor: d ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)' },
+      '.cm-gutters': { backgroundColor: c.bg, color: c.comment, border: 'none' },
+      '.cm-activeLineGutter': { backgroundColor: 'transparent' },
+    }, { dark: d });
+  }
+  function gMkHL(c) {
+    return HighlightStyle.define([
+      { tag: t.keyword, color: c.keyword },
+      { tag: t.operator, color: c.operator },
+      { tag: t.special(t.variableName), color: c.variable },
+      { tag: t.variableName, color: c.property },
+      { tag: t.function(t.variableName), color: c.func },
+      { tag: t.string, color: c.string },
+      { tag: t.number, color: c.number },
+      { tag: t.bool, color: c.number },
+      { tag: t.null, color: c.comment },
+      { tag: t.regexp, color: c.error },
+      { tag: t.blockComment, color: c.comment },
+      { tag: t.propertyName, color: c.property },
+      { tag: t.arithmeticOperator, color: c.operator },
+      { tag: t.compareOperator, color: c.operator },
+      { tag: t.paren, color: c.bracket },
+      { tag: t.squareBracket, color: c.bracket },
+      { tag: t.brace, color: c.bracket },
+      { tag: t.separator, color: c.comment },
+    ]);
+  }
+  function gThemeExts() { const c = isDark() ? dark : light; return [gMkTheme(c, isDark()), syntaxHighlighting(gMkHL(c))]; }
+
+  // --- Stream-based JSONata tokenizer ---
+  const KEYWORDS = new Set(['and','or','in','true','false','null','function']);
+  const OPERATORS = new Set(['+','-','*','/','%','&','|','=','<','>','!','~','^','?',':','.',',',';','@','#']);
+  const BRACKETS = new Set(['(',')','{','}','[',']']);
+
+  const jsonataStreamLang = StreamLanguage.define({
+    token(stream) {
+      if (stream.eatSpace()) return null;
+      if (stream.match('/*')) {
+        while (!stream.match('*/') && !stream.eol()) stream.next();
+        return 'blockComment';
+      }
+      const ch = stream.peek();
+      if (ch === '"' || ch === "'") {
+        const quote = stream.next();
+        while (!stream.eol()) {
+          const c = stream.next();
+          if (c === quote) return 'string';
+          if (c === '\\') stream.next();
+        }
+        return 'string';
+      }
+      if (/[0-9]/.test(ch)) {
+        stream.match(/^[0-9]*\.?[0-9]*([eE][+-]?[0-9]+)?/);
+        return 'number';
+      }
+      if (ch === '$') {
+        stream.next();
+        stream.match(/^[a-zA-Z_$][a-zA-Z0-9_]*/);
+        if (stream.peek() === '(') return 'function(variableName)';
+        return 'special(variableName)';
+      }
+      if (BRACKETS.has(ch)) {
+        stream.next();
+        return 'paren';
+      }
+      if (stream.match('~>') || stream.match(':=') || stream.match('!=') ||
+          stream.match('>=') || stream.match('<=') || stream.match('**') ||
+          stream.match('..') || stream.match('?:') || stream.match('??')) {
+        return 'operator';
+      }
+      if (OPERATORS.has(ch)) {
+        stream.next();
+        return 'operator';
+      }
+      if (/[a-zA-Z_`]/.test(ch)) {
+        if (ch === '`') {
+          stream.next();
+          while (!stream.eol() && stream.peek() !== '`') stream.next();
+          if (stream.peek() === '`') stream.next();
+          return 'variableName';
+        }
+        stream.match(/^[a-zA-Z_][a-zA-Z0-9_]*/);
+        const word = stream.current();
+        if (KEYWORDS.has(word)) {
+          if (word === 'true' || word === 'false') return 'bool';
+          if (word === 'null') return 'null';
+          return 'keyword';
+        }
+        return 'variableName';
+      }
+      stream.next();
+      return null;
+    },
+  });
+
+  // --- WASM-powered linter (squiggly underlines) ---
+  const jsonataLinter = linter(view => {
+    if (!window._gLspReady || typeof window._gnataDiagnostics !== 'function') return [];
+    const doc = view.state.doc.toString();
+    if (!doc.trim()) return [];
+    try {
+      const result = window._gnataDiagnostics(doc);
+      if (result instanceof Error) return [];
+      const diags = JSON.parse(result);
+      return diags.map(d => ({
+        from: Math.max(0, d.from),
+        to: Math.min(doc.length, Math.max(d.from + 1, d.to)),
+        severity: 'error',
+        message: d.message,
+      }));
+    } catch { return []; }
+  }, { delay: 200 });
+
+  // --- Introspective autocomplete ---
+  function jsonataComplete(context) {
+    const doc = context.state.doc.toString();
+    const pos = context.pos;
+    const inputJson = window.gGetInput().trim() || 'null';
+    let from = pos;
+    while (from > 0) {
+      const ch = doc.charCodeAt(from - 1);
+      if ((ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) ||
+          (ch >= 48 && ch <= 57) || ch === 95 || ch === 36) from--;
+      else break;
+    }
+    const partial = doc.substring(from, pos);
+    const beforeFrom = doc.substring(0, from);
+    const isDot = beforeFrom.length > 0 && beforeFrom[beforeFrom.length - 1] === '.';
+
+    if (isDot && typeof window.gnataEval === 'function') {
+      const prefixExpr = beforeFrom.substring(0, beforeFrom.length - 1).trim();
+      let items = null;
+      if (prefixExpr) items = tryEvalKeys(prefixExpr, inputJson, partial);
+      if (!items || items.length === 0) items = allKeysFromJson(inputJson, partial);
+      if (items && items.length > 0) return { from, options: items.slice(0, 10) };
+    }
+
+    if (window._gLspReady && typeof window._gnataCompletions === 'function') {
+      let schema = '';
+      try { schema = JSON.stringify(buildSchema(JSON.parse(inputJson))); } catch {}
+      try {
+        const result = window._gnataCompletions(doc, pos, schema);
+        if (result instanceof Error) return null;
+        const items = JSON.parse(result);
+        if (items.length > 0) return { from, options: items.slice(0, 10) };
+      } catch {}
+    }
+
+    if (isDot) {
+      const items = allKeysFromJson(inputJson, partial);
+      if (items && items.length > 0) return { from, options: items.slice(0, 10) };
+    }
+
+    return null;
+  }
+
+  function tryEvalKeys(expr, inputJson, partial) {
+    try {
+      const raw = window.gnataEval(expr, inputJson);
+      let val = JSON.parse(raw);
+      if (Array.isArray(val)) val = val.find(v => v && typeof v === 'object') || null;
+      if (val && typeof val === 'object') {
+        return Object.keys(val)
+          .filter(k => !partial || k.toLowerCase().startsWith(partial.toLowerCase()))
+          .map(k => ({
+            label: k,
+            type: typeof val[k] === 'number' ? 'number' : typeof val[k] === 'string' ? 'string' : Array.isArray(val[k]) ? 'enum' : 'property',
+            detail: typeof val[k] === 'object' ? (Array.isArray(val[k]) ? 'array' : 'object') : typeof val[k],
+            boost: 3,
+          }));
+      }
+    } catch {}
+    return null;
+  }
+
+  function allKeysFromJson(inputJson, partial) {
+    try {
+      const data = JSON.parse(inputJson);
+      const keys = new Map();
+      collectKeys(data, keys, 3);
+      const items = [];
+      for (const [k, v] of keys) {
+        if (partial && !k.toLowerCase().startsWith(partial.toLowerCase())) continue;
+        items.push({
+          label: k,
+          type: typeof v === 'number' ? 'number' : typeof v === 'string' ? 'string' : Array.isArray(v) ? 'enum' : 'property',
+          detail: typeof v,
+          boost: 2,
+        });
+      }
+      return items;
+    } catch { return null; }
+  }
+
+  function collectKeys(obj, keys, depth) {
+    if (depth <= 0 || !obj || typeof obj !== 'object') return;
+    if (Array.isArray(obj)) {
+      for (const item of obj.slice(0, 5)) collectKeys(item, keys, depth);
+      return;
+    }
+    for (const [k, v] of Object.entries(obj)) {
+      if (!keys.has(k)) keys.set(k, v);
+      if (v && typeof v === 'object') collectKeys(v, keys, depth - 1);
+    }
+  }
+
+  function buildSchema(obj) {
+    if (obj === null || typeof obj !== 'object') return {};
+    if (Array.isArray(obj)) {
+      if (obj.length > 0 && typeof obj[0] === 'object') return buildSchema(obj[0]);
+      return {};
+    }
+    const fields = {};
+    for (const [key, val] of Object.entries(obj)) {
+      const child = { type: typeof val === 'number' ? 'number' : typeof val === 'string' ? 'string' : typeof val === 'boolean' ? 'boolean' : Array.isArray(val) ? 'array' : val === null ? 'null' : 'object' };
+      if (typeof val === 'object' && val !== null) {
+        const nested = buildSchema(val);
+        if (nested.fields) child.fields = nested.fields;
+      }
+      fields[key] = child;
+    }
+    return { fields };
+  }
+
+  // --- Hover markdown formatter (lightweight, no deps) ---
+  function formatHoverMarkdown(md) {
+    return md
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/```\n([\s\S]*?)```/g, '<pre>$1</pre>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+  }
+
+  // --- Expression editor ---
+  const gExprView = new EditorView({
+    state: EditorState.create({
+      doc: '$sum(Account.Order.Product.(Price * Quantity))',
+      extensions: [
+        keymap.of([...defaultKeymap, ...historyKeymap]),
+        history(),
+        placeholder('e.g. Account.Order.Product.(Price * Quantity)'),
+        jsonataStreamLang,
+        gThemeComp.of(gThemeExts()),
+        autocompletion({
+          override: [jsonataComplete],
+          activateOnTyping: true,
+          icons: false,
+        }),
+        jsonataLinter,
+        hoverTooltip(function(view, pos) {
+          if (!window._gLspReady || typeof window._gnataHover !== 'function') return null;
+          const doc = view.state.doc.toString();
+          let schema = '';
+          try { schema = JSON.stringify(buildSchema(JSON.parse(window.gGetInput().trim() || 'null'))); } catch(e) {}
+          const result = window._gnataHover(doc, pos, schema);
+          if (!result) return null;
+          try {
+            const info = JSON.parse(result);
+            return {
+              pos: info.from,
+              end: info.to,
+              above: true,
+              create() {
+                const dom = document.createElement('div');
+                dom.className = 'cm-hover-tooltip';
+                dom.innerHTML = formatHoverMarkdown(info.text);
+                return { dom };
+              }
+            };
+          } catch(e) { return null; }
+        }),
+        EditorView.updateListener.of(update => {
+          if (update.docChanged) gScheduleEval();
+        }),
+        EditorView.domEventHandlers({
+          keydown(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault();
+              window.gRunQuery();
+              return true;
+            }
+          }
+        }),
+      ],
+    }),
+    parent: document.getElementById('g-expression'),
+  });
+
+  // --- Input JSON editor ---
+  const defaultInput = '{\n  "Account": {\n    "Name": "Firefly",\n    "Order": [\n      {\n        "OrderID": "order103",\n        "Product": [\n          { "Name": "Bowler Hat", "Price": 34.45, "Quantity": 2 },\n          { "Name": "Trilby hat", "Price": 21.67, "Quantity": 1 }\n        ]\n      },\n      {\n        "OrderID": "order104",\n        "Product": [\n          { "Name": "Cloak", "Price": 107.99, "Quantity": 1 }\n        ]\n      }\n    ]\n  }\n}';
+
+  const gInputView = new EditorView({
+    state: EditorState.create({
+      doc: defaultInput,
+      extensions: [
+        keymap.of([...defaultKeymap, ...historyKeymap]),
+        history(),
+        gInputThemeComp.of(gThemeExts()),
+        json(),
+        EditorView.updateListener.of(update => {
+          if (update.docChanged) gScheduleEval();
+        }),
+      ],
+    }),
+    parent: document.getElementById('g-input'),
+  });
+
+  // --- Result editor (readonly) ---
+  const gResultView = new EditorView({
+    state: EditorState.create({
+      doc: '',
+      extensions: [
+        keymap.of(defaultKeymap),
+        gResultThemeComp.of(gThemeExts()),
+        json(),
+        EditorState.readOnly.of(true),
+        EditorView.editable.of(false),
+      ],
+    }),
+    parent: document.getElementById('g-result'),
+  });
+
+  // --- Expose getters/setters ---
+  window.gGetExpr = () => gExprView.state.doc.toString();
+  window.gSetExpr = (text) => { gExprView.dispatch({ changes: { from: 0, to: gExprView.state.doc.length, insert: text } }); };
+  window.gGetInput = () => gInputView.state.doc.toString();
+  window.gSetInput = (text) => { gInputView.dispatch({ changes: { from: 0, to: gInputView.state.doc.length, insert: text } }); };
+  window.gSetResult = (text, style) => {
+    gResultView.dispatch({ changes: { from: 0, to: gResultView.state.doc.length, insert: text || '' } });
+    const el = document.getElementById('g-result');
+    el.classList.remove('result-error', 'result-success');
+    if (style === 'error') el.classList.add('result-error');
+    else if (style === 'success') el.classList.add('result-success');
+  };
+
+  // --- Theme switching for gnata editors ---
+  window._gSwitchCMTheme = () => {
+    const exts = gThemeExts();
+    gExprView.dispatch({ effects: gThemeComp.reconfigure(exts) });
+    gInputView.dispatch({ effects: gInputThemeComp.reconfigure(exts) });
+    gResultView.dispatch({ effects: gResultThemeComp.reconfigure(exts) });
+  };
+
+  // Enable run button and do initial evaluation
+  gRunBtn.disabled = false;
+  document.getElementById('g-loading').style.display = 'none';
+  document.getElementById('g-loaded').style.display = 'flex';
+  gProgressBar.style.width = '100%';
+  gStatusEl.classList.add('ready');
+  gStatusEl.querySelector('span:last-child').textContent = 'Ready';
+  setTimeout(() => { gProgressBar.style.opacity = '0'; }, 300);
+  gEvaluate();
+};
 </script>
 </body>
 </html>

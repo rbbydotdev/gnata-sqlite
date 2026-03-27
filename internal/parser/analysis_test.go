@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 func TestAnalyzeFuncFastPath(t *testing.T) {

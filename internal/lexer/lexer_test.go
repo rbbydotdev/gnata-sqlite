@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/recolabs/gnata/internal/lexer"
+	"github.com/rbbydotdev/gnata-sqlite/internal/lexer"
 )
 
 // tokenizeAll is a helper that tokenizes a full expression, automatically

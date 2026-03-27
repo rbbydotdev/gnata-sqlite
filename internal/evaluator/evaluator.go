@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // Eval evaluates an AST node against input data in the given environment.

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/recolabs/gnata"
+	"github.com/rbbydotdev/gnata-sqlite"
 )
 
 type testCase struct {

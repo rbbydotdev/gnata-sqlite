@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/recolabs/gnata"
+	"github.com/rbbydotdev/gnata-sqlite"
 )
 
 func evalExpr(t *testing.T, expr string, data any) any {

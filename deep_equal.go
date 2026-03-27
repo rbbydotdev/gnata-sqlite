@@ -3,7 +3,7 @@ package gnata
 import (
 	"encoding/json"
 
-	"github.com/recolabs/gnata/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
 )
 
 // deepEqualInternal is the external-facing deep equality that normalizes the

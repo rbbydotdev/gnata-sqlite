@@ -3,7 +3,7 @@ package evaluator
 import (
 	"fmt"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 func evalUnary(node *parser.Node, input any, env *Environment) (any, error) {

@@ -1,4 +1,4 @@
-module github.com/recolabs/gnata
+module github.com/rbbydotdev/gnata-sqlite
 
 go 1.25.6
 

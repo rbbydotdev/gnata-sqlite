@@ -1,3 +1,10 @@
 *.wasm
+*.dylib
+*.so
+gnata_jsonata.h
+.agents
+skills-lock.json
 .secret
 .DS_Store
+node_modules/
+editor/codemirror/dist/

@@ -3,7 +3,7 @@ package evaluator
 import (
 	"slices"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // pathCtx pairs a value with the environment it was produced under.

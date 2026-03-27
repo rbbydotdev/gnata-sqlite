@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 func appendToSequence(seq *Sequence, v any) {

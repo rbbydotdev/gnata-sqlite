@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 func deepClone(v any) any {

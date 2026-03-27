@@ -1,7 +1,7 @@
 // Package functions implements the JSONata 2.x standard library.
 package functions
 
-import "github.com/recolabs/gnata/internal/evaluator"
+import "github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
 
 // EvalFn is a callback used by higher-order functions to invoke a lambda or
 // builtin function value without creating an import cycle. The env parameter

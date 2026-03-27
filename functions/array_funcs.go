@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"slices"
 
-	"github.com/recolabs/gnata/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
 )
 
 // ── $count ────────────────────────────────────────────────────────────────────

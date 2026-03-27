@@ -5,7 +5,7 @@ import (
 	"math"
 	"slices"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // Null is the singleton JSONata null value.

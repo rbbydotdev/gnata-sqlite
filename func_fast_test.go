@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/recolabs/gnata"
+	"github.com/rbbydotdev/gnata-sqlite"
 )
 
 var funcTestJSON = json.RawMessage(`{

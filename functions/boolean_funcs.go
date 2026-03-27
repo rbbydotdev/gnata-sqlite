@@ -1,6 +1,6 @@
 package functions
 
-import "github.com/recolabs/gnata/internal/evaluator"
+import "github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
 
 // ── $boolean ──────────────────────────────────────────────────────────────────
 

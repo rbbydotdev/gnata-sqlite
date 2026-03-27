@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/recolabs/gnata/internal/evaluator"
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // hofArgs trims the HOF callback argument list to the function's expected arity.

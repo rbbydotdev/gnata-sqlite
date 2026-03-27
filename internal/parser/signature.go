@@ -176,6 +176,6 @@ func isValidSigType(c byte) bool {
 	return false
 }
 
-func parseSigError(code, msg string) error {
-	return fmt.Errorf("JSONata error %s: %s", code, msg)
+func parseSigError(code, msg string) *ParseError {
+	return &ParseError{Code: code, Msg: msg, Pos: -1}
 }

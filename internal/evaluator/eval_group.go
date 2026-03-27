@@ -3,7 +3,7 @@ package evaluator
 import (
 	"fmt"
 
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 type groupEntry struct {

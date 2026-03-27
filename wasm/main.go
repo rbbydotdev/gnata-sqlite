@@ -31,17 +31,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall/js"
 
-	"github.com/recolabs/gnata"
+	"github.com/rbbydotdev/gnata-sqlite"
 )
 
 var (
-	compiledCache sync.Map
-	nextHandle    atomic.Uint32
-	exprCache     sync.Map // string → *gnata.Expression
+	compiledMu    sync.Mutex
+	compiledCache = make(map[uint32]*gnata.Expression)
+	nextHandle    uint32
+	exprMu        sync.Mutex
+	exprCache     = make(map[string]*gnata.Expression)
 )
 
 func main() {
@@ -85,7 +90,10 @@ func jsReleaseHandle(_ js.Value, args []js.Value) any {
 	if args[0].Type() != js.TypeNumber {
 		return jsError("gnataReleaseHandle: handle must be a number")
 	}
-	compiledCache.Delete(uint32(args[0].Int()))
+	h := uint32(args[0].Int())
+	compiledMu.Lock()
+	delete(compiledCache, h)
+	compiledMu.Unlock()
 	return js.Undefined()
 }
 
@@ -107,15 +115,17 @@ func jsEvalHandle(_ js.Value, args []js.Value) any {
 func doEval(expr, jsonData string) (result string, err error) {
 	defer catchPanic(&err)
 
-	var e *gnata.Expression
-	if cached, ok := exprCache.Load(expr); ok {
-		e = cached.(*gnata.Expression)
-	} else {
+	exprMu.Lock()
+	e, ok := exprCache[expr]
+	exprMu.Unlock()
+	if !ok {
 		compiled, compileErr := gnata.Compile(expr)
 		if compileErr != nil {
 			return "", compileErr
 		}
-		exprCache.Store(expr, compiled)
+		exprMu.Lock()
+		exprCache[expr] = compiled
+		exprMu.Unlock()
 		e = compiled
 	}
 
@@ -130,37 +140,40 @@ func doCompile(expr string) (handle int, err error) {
 		return 0, compileErr
 	}
 
-	h := nextHandle.Add(1)
+	h := atomic.AddUint32(&nextHandle, 1)
 	if h == 0 {
 		// uint32 wrapped — 2^32 compile calls exhausted the handle space.
-		// Note: after this wrap nextHandle continues from 0, so subsequent Add(1)
-		// calls will yield 1, 2, … again — silently overwriting any live entries
-		// already stored under those keys. This is unreachable in practice (requires
-		// exactly 2^32 compile calls) and is documented here for completeness.
 		return 0, fmt.Errorf("handle counter overflow: too many compiled expressions")
 	}
-	compiledCache.Store(h, e)
+	compiledMu.Lock()
+	compiledCache[h] = e
+	compiledMu.Unlock()
 	return int(h), nil
 }
 
 func doEvalHandle(handle uint32, jsonData string) (result string, err error) {
 	defer catchPanic(&err)
 
-	val, ok := compiledCache.Load(handle)
+	compiledMu.Lock()
+	e, ok := compiledCache[handle]
+	compiledMu.Unlock()
 	if !ok {
 		return "", fmt.Errorf("unknown handle %d", handle)
 	}
-	e := val.(*gnata.Expression)
 
 	return evalAndMarshal(e, jsonData)
 }
 
 // evalAndMarshal evaluates expr against jsonData and marshals the result to JSON.
-// Shared by doEval and doEvalHandle to avoid duplicating unmarshal/eval/marshal logic.
+// Uses gnata.DecodeJSON (streaming decoder) instead of json.Unmarshal, and
+// marshalAny instead of json.Marshal, to avoid reflect — which TinyGo's
+// encoding/json does not fully support.
 func evalAndMarshal(e *gnata.Expression, jsonData string) (string, error) {
 	var data any
 	if jsonData != "" && jsonData != "null" {
-		if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
+		var err error
+		data, err = gnata.DecodeJSON(json.RawMessage(jsonData))
+		if err != nil {
 			return "", fmt.Errorf("invalid JSON input: %w", err)
 		}
 	}
@@ -170,11 +183,95 @@ func evalAndMarshal(e *gnata.Expression, jsonData string) (string, error) {
 		return "", err
 	}
 
-	out, err := json.Marshal(res)
-	if err != nil {
+	// Normalize internal types (OrderedMap → map, null sentinel → nil).
+	res = gnata.NormalizeValue(res)
+
+	var buf strings.Builder
+	if err := marshalAny(&buf, res); err != nil {
 		return "", fmt.Errorf("cannot marshal result: %w", err)
 	}
-	return string(out), nil
+	return buf.String(), nil
+}
+
+// marshalAny serializes a gnata result value to JSON without using reflect.
+// After NormalizeValue, the only types are: nil, bool, float64, json.Number,
+// string, []any, and map[string]any.
+func marshalAny(buf *strings.Builder, v any) error {
+	switch val := v.(type) {
+	case nil:
+		buf.WriteString("null")
+	case bool:
+		if val {
+			buf.WriteString("true")
+		} else {
+			buf.WriteString("false")
+		}
+	case float64:
+		if math.IsInf(val, 0) || math.IsNaN(val) {
+			return fmt.Errorf("unsupported float value: %v", val)
+		}
+		buf.WriteString(strconv.FormatFloat(val, 'f', -1, 64))
+	case json.Number:
+		buf.WriteString(string(val))
+	case string:
+		marshalString(buf, val)
+	case []any:
+		buf.WriteByte('[')
+		for i, elem := range val {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			if err := marshalAny(buf, elem); err != nil {
+				return err
+			}
+		}
+		buf.WriteByte(']')
+	case map[string]any:
+		buf.WriteByte('{')
+		first := true
+		for k, mv := range val {
+			if !first {
+				buf.WriteByte(',')
+			}
+			first = false
+			marshalString(buf, k)
+			buf.WriteByte(':')
+			if err := marshalAny(buf, mv); err != nil {
+				return err
+			}
+		}
+		buf.WriteByte('}')
+	default:
+		return fmt.Errorf("unsupported type: %T", v)
+	}
+	return nil
+}
+
+// marshalString writes a JSON-escaped string to buf.
+func marshalString(buf *strings.Builder, s string) {
+	buf.WriteByte('"')
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch c {
+		case '"':
+			buf.WriteString(`\"`)
+		case '\\':
+			buf.WriteString(`\\`)
+		case '\n':
+			buf.WriteString(`\n`)
+		case '\r':
+			buf.WriteString(`\r`)
+		case '\t':
+			buf.WriteString(`\t`)
+		default:
+			if c < 0x20 {
+				buf.WriteString(fmt.Sprintf(`\u%04x`, c))
+			} else {
+				buf.WriteByte(c)
+			}
+		}
+	}
+	buf.WriteByte('"')
 }
 
 // catchPanic recovers from any panic and stores it as an error.

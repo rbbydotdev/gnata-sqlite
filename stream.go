@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/recolabs/gnata/internal/evaluator"
-	"github.com/recolabs/gnata/internal/parser"
+	"github.com/rbbydotdev/gnata-sqlite/internal/evaluator"
+	"github.com/rbbydotdev/gnata-sqlite/internal/parser"
 )
 
 // StreamEvaluator manages compiled expressions for high-throughput streaming evaluation.
