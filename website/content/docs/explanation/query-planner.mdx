@@ -1,0 +1,92 @@
+---
+title: Query Planner
+description: How jsonata_query decomposes expressions into streaming accumulators — matching native SQL performance
+---
+
+# Query Planner
+
+`jsonata_query()` includes a query planner that decomposes JSONata expressions into streaming accumulators at compile time. Result: 83ms vs 84ms native SQL on 100K rows.
+
+- Full optimization story with benchmarks: [sqlite/BLOGPOST.md](https://github.com/rbbydotdev/gnata-sqlite/blob/main/sqlite/BLOGPOST.md)
+- Complete pattern reference: [sqlite/OPTIMIZATION.md](https://github.com/rbbydotdev/gnata-sqlite/blob/main/sqlite/OPTIMIZATION.md)
+
+## AST classification
+
+The planner walks the JSONata AST and classifies every node:
+
+| Classification | Example | Per-row cost | Memory |
+|---|---|---|---|
+| **CONSTANT** | `"Q1 Report"`, `42` | None | O(1) |
+| **ACCUMULATOR** | `$sum(path)`, `$count()` | Extract + accumulate | O(1) |
+| **FILTERED ACCUMULATOR** | `$sum($filter($, fn).path)` | Predicate + conditional accumulate | O(1) |
+| **DERIVED** | `$sum(x) - $count($)` | None (post-aggregate) | O(1) |
+| **OPAQUE** | `$sort(...)`, `$reduce(...)` | Accumulate row | O(n) |
+
+**Example decomposition:**
+
+```
+{
+  "revenue":   $sum($filter($, fn).amount),
+  "refunds":   $sum($filter($, fn).amount),
+  "net":       $sum(...) - $sum(...),
+  "avg":       $round($average(amount), 2),
+  "customers": $count($distinct(customer))
+}
+```
+
+→ 5 streaming accumulators + post-aggregate arithmetic. `net` reuses the same accumulators as `revenue` and `refunds` (common subexpression elimination). Final object assembled once.
+
+## Key optimizations
+
+### Batch GJSON extraction (4.2x improvement)
+
+Inspired by DuckDB's JSON shredding. All unique field paths collected at plan time. Per row, one `gjson.GetManyBytes` call extracts all values in a single scan.
+
+- Before: 5 accumulators x 1 GJSON scan = 5 scans/row
+- After: 1 scan/row, results distributed by index
+
+### Predicate sharing
+
+Inspired by ClickHouse's `-If` combinator. Identical predicates deduplicated at plan time. Each unique predicate evaluates once per row. Multiple accumulators reference the boolean result by index.
+
+### Constant folding
+
+Inspired by Spark Catalyst.
+
+- `$sum(amount * 1.1)` → `$sum(amount) * 1.1` (multiplicative constant to post-aggregate)
+- `$sum(amount + 5)` → `$sum(amount) + 5 * $count($)` (algebraic identity for additive constants)
+
+## Streaming reference
+
+| Pattern | Streams | Memory |
+|---|---|---|
+| `$sum(path)`, `$count()`, `$max`, `$min`, `$average` | yes | O(1) |
+| `$sum($filter($, fn).path)` | yes | O(1) |
+| `$count($distinct(path))` | yes | O(unique) |
+| `$sum(path * constant)` | yes (constant folded) | O(1) |
+| `{ key: agg, key: agg, ... }` | yes (parallel) | O(1) |
+| `$round($average(x), 2)` | yes (finalize once) | O(1) |
+| `$sum(x) - $count($)` | yes (post-aggregate) | O(1) |
+| `"Q1 Report"` | yes (constant) | O(1) |
+| `$sort(...)` | no | O(n) |
+| `$reduce($, fn, init)` | no | O(n) |
+
+Mixed expressions: only opaque subtrees pay O(n). Streaming accumulators run in constant memory.
+
+## Why it matches native SQL
+
+Native SQL calls `json_extract` per aggregate per row. With 5 aggregates: 8+ `json_extract` calls/row.
+
+`jsonata_query` does 1 `gjson.GetManyBytes` per row for all fields, evaluates each predicate once, updates all accumulators from pre-extracted values.
+
+At 9+ aggregates, `jsonata_query` is *faster* (95ms vs 102ms) — SQL's per-aggregate extraction grows linearly while batch extraction stays nearly flat.
+
+## Performance progression
+
+| Method | Time (100K rows) | Memory |
+|---|---|---|
+| `jsonata_query` v2 (current) | **83ms** | O(unique) |
+| SQL (single-scan FILTER/CASE) | **84ms** | O(1) |
+| SQL (5 subqueries) | 150ms | O(1) |
+| `jsonata_query` v1 | 349ms | O(unique) |
+| `jsonata_query` (accumulate) | 439ms | O(100K) |

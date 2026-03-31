@@ -1,0 +1,167 @@
+---
+title: Editor & LSP API
+description: API reference for the CodeMirror 6 npm package, WASM exports, and native LSP server
+---
+
+# Editor & LSP API
+
+Two delivery modes from the same Go codebase:
+
+- **Browser** — TinyGo WASM module (182 KB / 85 KB gzipped)
+- **Server** — Native Go LSP server (stdio JSON-RPC)
+
+## CodeMirror API
+
+### `jsonata(): LanguageSupport`
+
+Syntax highlighting only. No WASM required.
+
+```typescript
+import { jsonata } from "@gnata-sqlite/codemirror"
+// extensions: [basicSetup, jsonata()]
+```
+
+Provides: syntax highlighting, bracket matching, auto-close, code folding.
+
+### `jsonataFull(config?): LanguageSupport`
+
+Full support: highlighting + diagnostics + autocomplete + hover.
+
+```typescript
+import { jsonataFull, initWasm } from "@gnata-sqlite/codemirror"
+
+await initWasm("/gnata-lsp.wasm", "/lsp-wasm_exec.js")
+
+new EditorView({
+  extensions: [basicSetup, jsonataFull({ schema: '...' })],
+  parent: document.getElementById("editor")!,
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `schema` | `string` | JSON schema for field autocompletion |
+
+### `initWasm(wasmUrl, execUrl): Promise<void>`
+
+Load the TinyGo WASM module. Call once before creating editors.
+
+### `jsonataLint(): Extension`
+
+Standalone linter extension. Use with `jsonata()` for manual composition.
+
+### `jsonataCompletion(config?): CompletionSource`
+
+Standalone autocompletion source.
+
+---
+
+## Schema format
+
+```json
+{
+  "fields": {
+    "Account": {
+      "type": "object",
+      "fields": {
+        "Name": { "type": "string" },
+        "Order": {
+          "type": "array",
+          "fields": {
+            "OrderID": { "type": "string" },
+            "Product": { "type": "object" },
+            "Price": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Flat rows:
+
+```json
+{ "fields": { "id": { "type": "number" }, "name": { "type": "string" } } }
+```
+
+---
+
+## Autocomplete contexts
+
+| Context | Suggestions |
+|---------|------------|
+| After `$` | Built-in function names (70+) |
+| After `.` | Schema fields at resolved path depth |
+| Start of expression | Top-level schema fields + functions + keywords |
+| After operators | Fields + functions + keywords |
+
+---
+
+## WASM exports (low-level)
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `_gnataDiagnostics(src)` | `string → string` | JSON array of `{from, to, message}` |
+| `_gnataCompletions(src, pos, schema)` | `string, number, string → string` | JSON array of completion items |
+| `_gnataHover(src, pos, schema)` | `string, number, string → string\|null` | JSON `{from, to, text}` or null |
+
+---
+
+## Native LSP server
+
+### Build
+
+```bash
+go build -o gnata-lsp ./editor/
+```
+
+### VS Code
+
+```json
+{ "jsonata.lsp.serverPath": "/path/to/gnata-lsp" }
+```
+
+### Neovim (lspconfig)
+
+```lua
+require("lspconfig.configs").jsonata = {
+  default_config = {
+    cmd = { "/path/to/gnata-lsp" },
+    filetypes = { "jsonata" },
+    root_dir = function() return vim.loop.cwd() end,
+  },
+}
+require("lspconfig").jsonata.setup({})
+```
+
+### LSP capabilities
+
+| Capability | Supported |
+|-----------|-----------|
+| `textDocument/publishDiagnostics` | Yes — real-time parse errors |
+| `textDocument/completion` | Yes — functions, fields, keywords |
+| `textDocument/hover` | Yes — signatures + examples |
+| `textDocument/didOpen` | Yes |
+| `textDocument/didChange` | Yes (full sync) |
+
+### Schema via initializationOptions
+
+```json
+{ "initializationOptions": { "schema": "{\"fields\":{\"id\":{\"type\":\"number\"}}}" } }
+```
+
+---
+
+## Build tags
+
+| File | Purpose | Build constraint |
+|------|---------|-----------------|
+| `main_wasm.go` | syscall/js entry point | `//go:build js && wasm` |
+| `main_lsp.go` | stdio JSON-RPC server | `//go:build !js` |
+| `diagnostics.go` | Parse errors → diagnostics | shared |
+| `completions.go` | Context-aware autocomplete | shared |
+| `hover.go` | Function documentation | shared |
+| `funcinfo.go` | Built-in function catalog | shared |
+| `schema.go` | Schema parser | shared |
+| `marshal.go` | Reflect-free AST serializer | shared |

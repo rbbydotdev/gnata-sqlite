@@ -1,0 +1,145 @@
+---
+title: React Widget
+description: Build a JSONata editor into your React app with hooks, components, and live evaluation
+---
+
+# React Widget Tutorial
+
+Build a JSONata editor into a React app with syntax highlighting, autocomplete, hover docs, and live evaluation.
+
+This is what the finished editor looks like — try editing the expression:
+
+<RunExample
+  expression={'orders.{\n  "id": id,\n  "total": $round($sum(items.(price * qty)), 2),\n  "items": $count(items)\n}'}
+  input='{"orders":[{"id":"ORD-001","items":[{"price":29.99,"qty":5},{"price":149.00,"qty":1}]},{"id":"ORD-002","items":[{"price":29.99,"qty":20},{"price":450.00,"qty":2}]}]}'
+  height={200}
+/>
+
+## Prerequisites
+
+- Node.js 18+
+- React 18+ project
+- WASM files (built from source or downloaded from a release)
+
+## Step 1: Install
+
+```bash
+npm install @gnata-sqlite/react
+```
+
+## Step 2: Serve the WASM files
+
+Copy to `public/`:
+
+```bash
+make wasm
+cp gnata.wasm gnata-lsp.wasm wasm_exec.js lsp-wasm_exec.js public/
+```
+
+## Step 3: Full playground in one component
+
+```tsx
+import { JsonataPlayground, useJsonataWasm } from '@gnata-sqlite/react'
+
+const sampleData = JSON.stringify({
+  Account: {
+    Name: "Firefly",
+    Order: [
+      { OrderID: "order103", Product: [
+        { Name: "Bowler Hat", Price: 34.45, Quantity: 2 },
+        { Name: "Trilby hat", Price: 21.67, Quantity: 1 },
+      ]},
+    ],
+  },
+}, null, 2)
+
+export default function App() {
+  const wasm = useJsonataWasm({
+    evalWasmUrl: '/gnata.wasm',
+    evalExecUrl: '/wasm_exec.js',
+    lspWasmUrl: '/gnata-lsp.wasm',
+    lspExecUrl: '/lsp-wasm_exec.js',
+  })
+
+  if (wasm.error) return <div>Error: {wasm.error.message}</div>
+  if (!wasm.isReady) return <div>Loading WASM...</div>
+
+  return (
+    <JsonataPlayground
+      defaultExpression="$sum(Account.Order.Product.(Price * Quantity))"
+      defaultInput={sampleData}
+      wasm={wasm}
+      theme="dark"
+      height={400}
+    />
+  )
+}
+```
+
+## Step 4: Custom layout with individual components
+
+```tsx
+import {
+  JsonataEditor, JsonataInput, JsonataResult,
+  useJsonataWasm, useJsonataEval, useJsonataSchema,
+} from '@gnata-sqlite/react'
+import { useState } from 'react'
+
+export default function CustomEditor() {
+  const [expression, setExpression] = useState('Account.Name')
+  const [inputJson, setInputJson] = useState('{"Account":{"Name":"Firefly"}}')
+
+  const wasm = useJsonataWasm({
+    evalWasmUrl: '/gnata.wasm', evalExecUrl: '/wasm_exec.js',
+    lspWasmUrl: '/gnata-lsp.wasm', lspExecUrl: '/lsp-wasm_exec.js',
+  })
+  const { result, error, timing } = useJsonataEval(expression, inputJson, wasm)
+  const schema = useJsonataSchema(inputJson)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <JsonataEditor
+        value={expression} onChange={setExpression}
+        schema={schema} wasm={wasm} theme="dark"
+        getInputJson={() => inputJson}
+      />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <JsonataInput value={inputJson} onChange={setInputJson} theme="dark" />
+        <JsonataResult value={result} error={error} timing={timing} theme="dark" />
+      </div>
+    </div>
+  )
+}
+```
+
+## Step 5: Hooks only (no components)
+
+```tsx
+import { useJsonataWasm, useJsonataEval, useJsonataSchema } from '@gnata-sqlite/react'
+import { useState } from 'react'
+
+function useMyEditor() {
+  const [expr, setExpr] = useState('')
+  const [input, setInput] = useState('{}')
+
+  const wasm = useJsonataWasm({ evalWasmUrl: '/gnata.wasm', evalExecUrl: '/wasm_exec.js' })
+  const { result, error, timing } = useJsonataEval(expr, input, wasm)
+  const schema = useJsonataSchema(input)
+
+  return { expr, setExpr, input, setInput, result, error, timing, schema, wasm }
+}
+```
+
+## Step 6: Syntax highlighting only (no WASM)
+
+```tsx
+<JsonataEditor value={expression} onChange={setExpression} theme="dark" />
+```
+
+No `wasm` prop = no WASM loading. Highlighting works instantly with the tokenizer only.
+
+## Next Steps
+
+- [React Widget API Reference](/reference/react-widget) — full props, hooks, and types
+- [Editor & LSP API](/reference/editor-api) — low-level CodeMirror and WASM exports
+- [TinyGo WASM](/explanation/tinygo-wasm) — why the LSP is 85KB

@@ -1,0 +1,104 @@
+---
+title: Editor Setup
+description: Set up JSONata language support in VS Code, Neovim, or any CodeMirror 6 editor
+---
+
+# Editor Setup
+
+## CodeMirror 6 (Browser)
+
+### Syntax highlighting only
+
+```bash
+npm install @gnata-sqlite/codemirror
+```
+
+```typescript
+import { EditorView, basicSetup } from "codemirror"
+import { jsonata } from "@gnata-sqlite/codemirror"
+
+new EditorView({
+  extensions: [basicSetup, jsonata()],
+  parent: document.getElementById("editor")!,
+})
+```
+
+### Full support (diagnostics + autocomplete + hover)
+
+Requires WASM files — build or download from a release.
+
+```typescript
+import { EditorView, basicSetup } from "codemirror"
+import { jsonataFull, initWasm } from "@gnata-sqlite/codemirror"
+
+await initWasm("/gnata-lsp.wasm", "/lsp-wasm_exec.js")
+
+new EditorView({
+  extensions: [basicSetup, jsonataFull({ schema: mySchema })],
+  parent: document.getElementById("editor")!,
+})
+```
+
+### Build the WASM files
+
+```bash
+make wasm
+```
+
+---
+
+## VS Code
+
+Build the native LSP server:
+
+```bash
+go build -o gnata-lsp ./editor/
+```
+
+Add to `settings.json`:
+
+```json
+{
+  "jsonata.lsp.serverPath": "/path/to/gnata-lsp"
+}
+```
+
+---
+
+## Neovim
+
+Build the native LSP server (same as above), then configure:
+
+```lua
+require("lspconfig.configs").jsonata = {
+  default_config = {
+    cmd = { "/path/to/gnata-lsp" },
+    filetypes = { "jsonata" },
+    root_dir = function() return vim.loop.cwd() end,
+  },
+}
+require("lspconfig").jsonata.setup({})
+```
+
+---
+
+## Schema for autocomplete
+
+Without a schema, autocomplete only suggests built-in functions. Pass a schema to enable field suggestions:
+
+```json
+{
+  "fields": {
+    "Account": {
+      "type": "object",
+      "fields": {
+        "Name": { "type": "string" },
+        "Order": { "type": "array", "fields": { "OrderID": { "type": "string" } } }
+      }
+    }
+  }
+}
+```
+
+- **CodeMirror:** `schema` option in `jsonataFull()`
+- **LSP:** `initializationOptions.schema` as a JSON string

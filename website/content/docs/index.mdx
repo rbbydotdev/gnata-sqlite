@@ -1,0 +1,31 @@
+---
+title: gnata-sqlite
+description: End-to-end JSONata 2.x in Go — SQLite extension, WASM LSP, and composable React editor
+---
+
+End-to-end [JSONata 2.x](https://jsonata.org) in Go — from a loadable SQLite extension to a composable React editor with context-aware autocomplete.
+
+## Try it
+
+<RunExample
+  expression={'$sum(\n  Account.Order.Product.(\n    Price * Quantity\n  )\n)'}
+  input='{"Account":{"Name":"Firefly","Order":[{"OrderID":"order103","Product":[{"Name":"Bowler Hat","Price":34.45,"Quantity":2},{"Name":"Trilby hat","Price":21.67,"Quantity":1}]},{"OrderID":"order104","Product":[{"Name":"Cloak","Price":107.99,"Quantity":1}]}]}}'
+  height={200}
+/>
+
+## Get started
+
+<Cards>
+  <Card title="Getting Started" href="/docs/tutorials/getting-started">
+    Build the SQLite extension and run your first JSONata query
+  </Card>
+  <Card title="React Widget" href="/docs/tutorials/react-widget">
+    Embed a JSONata editor in your React app
+  </Card>
+  <Card title="Editor Setup" href="/docs/guides/editor-setup">
+    Set up JSONata language support in VS Code, Neovim, or CodeMirror
+  </Card>
+  <Card title="Architecture" href="/docs/explanation/architecture">
+    How the layers fit together
+  </Card>
+</Cards>

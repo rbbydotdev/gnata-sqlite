@@ -1,0 +1,141 @@
+---
+title: Migrate from json_extract
+description: Side-by-side guide for replacing json_extract with gnata-sqlite functions
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Quick reference
+
+| `json_extract` pattern | gnata-sqlite replacement |
+|---|---|
+| `json_extract(col, '$.path')` | `jsonata('path', col)` |
+| `json_extract` + `CASE/WHEN` | `jsonata('expr ? val', col)` |
+| `json_each(col, '$.arr')` | `jsonata_each('arr', col)` |
+| Multiple `json_extract` calls | Single `jsonata` with object construction |
+| `json_each` + `SUM` subquery | `jsonata_query('$sum(arr)', col)` |
+
+See [sqlite-functions](/docs/reference/sqlite-functions) for full signatures.
+
+---
+
+## 1. Simple field access
+
+```sql
+-- Before
+SELECT json_extract(data, '$.name') AS name FROM users;
+
+-- After
+SELECT jsonata('name', data) AS name FROM users;
+```
+
+---
+
+## 2. Nested path
+
+```sql
+-- Before
+SELECT json_extract(data, '$.account.order.product') AS product FROM events;
+
+-- After
+SELECT jsonata('account.order.product', data) AS product FROM events;
+```
+
+No `$.` prefix needed.
+
+---
+
+## 3. Filtered extraction
+
+```sql
+-- Before
+SELECT
+  CASE WHEN json_extract(data, '$.status') = 'active'
+       THEN json_extract(data, '$.name')
+  END AS active_name
+FROM users;
+
+-- After
+SELECT jsonata('status = "active" ? name', data) AS active_name FROM users;
+```
+
+---
+
+## 4. Array aggregation
+
+```sql
+-- Before
+SELECT u.id,
+  (SELECT SUM(j.value) FROM json_each(u.data, '$.amounts') AS j) AS total
+FROM users u;
+
+-- After
+SELECT id, jsonata_query('$sum(amounts)', data) AS total FROM users;
+```
+
+---
+
+## 5. Multi-field extraction
+
+```sql
+-- Before
+SELECT json_extract(data, '$.first') AS first,
+       json_extract(data, '$.last') AS last,
+       json_extract(data, '$.email') AS email,
+       json_extract(data, '$.phone') AS phone
+FROM contacts;
+
+-- After
+SELECT jsonata('{ "first": first, "last": last, "email": email, "phone": phone }', data)
+FROM contacts;
+```
+
+One function call, one parse. To split back into columns, wrap with `json_extract` on the result.
+
+---
+
+## 6. Complex report
+
+```sql
+-- Before: 5 CASE/WHEN/json_extract chains
+SELECT json_extract(data, '$.id') AS id,
+  CASE WHEN json_extract(data, '$.type') = 'premium'
+       THEN json_extract(data, '$.rate') * 1.2
+       ELSE json_extract(data, '$.rate') END AS adjusted_rate,
+  CASE WHEN json_extract(data, '$.region') IN ('us', 'ca')
+       THEN 'north_america' ELSE 'other' END AS market,
+  CASE WHEN json_extract(data, '$.score') > 80 THEN 'high'
+       WHEN json_extract(data, '$.score') > 50 THEN 'mid'
+       ELSE 'low' END AS tier
+FROM accounts;
+
+-- After: one expression
+SELECT jsonata_query('{
+  "id": id,
+  "adjusted_rate": type = "premium" ? rate * 1.2 : rate,
+  "market": region in ["us", "ca"] ? "north_america" : "other",
+  "tier": score > 80 ? "high" : score > 50 ? "mid" : "low"
+}', data)
+FROM accounts;
+```
+
+---
+
+## 7. Table-valued expansion
+
+```sql
+-- Before
+SELECT o.id AS order_id, j.value AS item
+FROM orders o, json_each(o.data, '$.items') AS j;
+
+-- After
+SELECT o.id AS order_id, item.value AS item
+FROM orders o, jsonata_each('items', o.data) AS item;
+```
+
+---
+
+## Further reading
+
+- [Function signatures](/docs/reference/sqlite-functions)
+- [Query planner](/docs/explanation/query-planner) — performance characteristics vs `json_extract`

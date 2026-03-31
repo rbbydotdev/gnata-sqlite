@@ -1,0 +1,478 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/*
+ * Tokyo Night theme for Fumadocs
+ *
+ * bg:       #1a1b26   hsl(231, 31%, 13%)
+ * surface:  #1f2335   hsl(229, 26%, 16%)
+ * text:     #a9b1d6   hsl(228, 39%, 75%)
+ * strong:   #c0caf5   hsl(228, 76%, 85%)
+ * accent:   #7aa2f7   hsl(222, 89%, 72%)
+ * green:    #9ece6a   hsl(95, 54%, 61%)
+ * vista:    #bb9af7   hsl(267, 84%, 79%)
+ * orange:   #ff9e64   hsl(22, 100%, 70%)
+ * teal:     #73daca   hsl(168, 57%, 65%)
+ * error:    #f7768e   hsl(350, 87%, 72%)
+ * muted:    #565f89   hsl(228, 23%, 44%)
+ * border:   #292e42   hsl(231, 23%, 21%)
+ * border-l: #3b4261   hsl(231, 24%, 30%)
+ */
+
+:root {
+  /* Light mode - Tokyo Night Day (soft warm variant) */
+  --color-fd-background: hsl(220, 23%, 95%);
+  --color-fd-foreground: hsl(231, 31%, 20%);
+  --color-fd-card: hsl(220, 22%, 92%);
+  --color-fd-card-foreground: hsl(231, 31%, 20%);
+  --color-fd-popover: hsl(220, 22%, 94%);
+  --color-fd-popover-foreground: hsl(231, 31%, 20%);
+  --color-fd-primary: hsl(222, 89%, 52%);
+  --color-fd-primary-foreground: hsl(0, 0%, 100%);
+  --color-fd-secondary: hsl(220, 22%, 90%);
+  --color-fd-secondary-foreground: hsl(231, 31%, 20%);
+  --color-fd-muted: hsl(220, 22%, 92%);
+  --color-fd-muted-foreground: hsl(228, 23%, 44%);
+  --color-fd-accent: hsl(222, 60%, 88%);
+  --color-fd-accent-foreground: hsl(231, 31%, 20%);
+  --color-fd-border: hsl(223, 16%, 83%);
+  --color-fd-ring: hsl(222, 89%, 52%);
+  --color-fd-overlay: hsla(231, 31%, 13%, 0.15);
+}
+
+.dark {
+  --color-fd-background: hsl(231, 31%, 13%);
+  --color-fd-foreground: hsl(228, 39%, 75%);
+  --color-fd-card: hsl(229, 26%, 16%);
+  --color-fd-card-foreground: hsl(228, 76%, 85%);
+  --color-fd-popover: hsl(229, 26%, 16%);
+  --color-fd-popover-foreground: hsl(228, 76%, 85%);
+  --color-fd-primary: hsl(222, 89%, 72%);
+  --color-fd-primary-foreground: hsl(231, 31%, 13%);
+  --color-fd-secondary: hsl(229, 26%, 19%);
+  --color-fd-secondary-foreground: hsl(228, 39%, 75%);
+  --color-fd-muted: hsl(229, 26%, 16%);
+  --color-fd-muted-foreground: hsl(228, 23%, 44%);
+  --color-fd-accent: hsl(231, 23%, 24%);
+  --color-fd-accent-foreground: hsl(228, 76%, 85%);
+  --color-fd-border: hsla(231, 23%, 21%, 80%);
+  --color-fd-ring: hsl(222, 89%, 72%);
+  --color-fd-overlay: hsla(231, 31%, 6%, 0.5);
+}
+
+.dark #nd-sidebar {
+  --color-fd-muted: hsl(229, 26%, 19%);
+  --color-fd-secondary: hsl(229, 26%, 19%);
+  --color-fd-muted-foreground: hsl(228, 23%, 55%);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html:has(body[data-scroll-locked]) {
+  scrollbar-gutter: auto;
+}
+
+/* ─── Tokyo Night — Docs prose enrichment ─── */
+
+/*
+ * Sidebar active item accent
+ */
+.dark #nd-sidebar [aria-current='page'],
+.dark #nd-sidebar [data-active='true'] {
+  color: #7aa2f7;
+  background-color: rgba(122, 162, 247, 0.12);
+  border-left: 2px solid #7aa2f7;
+}
+
+.dark #nd-sidebar a:hover {
+  color: #c0caf5;
+  transition: color 0.15s ease;
+}
+
+/*
+ * Section headings in docs prose
+ */
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4 {
+  color: #c0caf5;
+}
+
+.dark .prose h2 {
+  border-bottom: 1px solid #292e42;
+  padding-bottom: 0.4em;
+}
+
+/*
+ * Links — accent blue instead of default
+ */
+.dark .prose a {
+  color: #7aa2f7;
+  text-decoration-color: rgba(122, 162, 247, 0.4);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.dark .prose a:hover {
+  color: #89b4fa;
+  text-decoration-color: #89b4fa;
+}
+
+/*
+ * Inline code — green on dark bg matching the playground
+ */
+.dark .prose :not(pre) > code {
+  color: #9ece6a;
+  background-color: #1a1b26;
+  border: 1px solid #292e42;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+  font-size: 0.875em;
+}
+
+/*
+ * Blockquotes — accent left border
+ */
+.dark .prose blockquote {
+  border-left: 3px solid #7aa2f7;
+  background-color: rgba(122, 162, 247, 0.06);
+  color: #a9b1d6;
+  padding: 0.75em 1em;
+}
+
+/*
+ * Tables — Tokyo Night borders and header
+ */
+.dark .prose table {
+  border-collapse: collapse;
+}
+
+.dark .prose th {
+  background-color: #1f2335;
+  color: #c0caf5;
+  border: 1px solid #292e42;
+  padding: 0.5em 0.75em;
+  font-weight: 600;
+}
+
+.dark .prose td {
+  border: 1px solid #292e42;
+  padding: 0.5em 0.75em;
+  color: #a9b1d6;
+}
+
+.dark .prose tr:hover td {
+  background-color: rgba(122, 162, 247, 0.04);
+}
+
+/*
+ * Code blocks — ensure Tokyo Night bg applies to Fumadocs Shiki containers
+ * Structure: figure.shiki > div.py-3.5 > pre > code > span
+ * The figure uses bg-fd-card which needs overriding in dark mode
+ */
+.dark figure.shiki,
+.dark [data-rehype-pretty-code-figure] {
+  background-color: #1a1b26 !important;
+  border-color: #292e42 !important;
+}
+:root:not(.dark) figure.shiki,
+:root:not(.dark) [data-rehype-pretty-code-figure] {
+  background-color: #e1e2e7 !important;
+  border-color: #c4c8da !important;
+}
+
+.dark .prose pre {
+  background-color: transparent !important;
+}
+
+.dark .prose pre code {
+  color: #a9b1d6;
+}
+
+/*
+ * Horizontal rules
+ */
+.dark .prose hr {
+  border-color: #292e42;
+}
+
+/*
+ * Strong / bold text
+ */
+.dark .prose strong {
+  color: #c0caf5;
+}
+
+/*
+ * Lists — subtle bullet color
+ */
+.dark .prose li::marker {
+  color: #565f89;
+}
+
+/*
+ * Fumadocs search dialog — Tokyo Night
+ */
+.dark [data-radix-popper-content-wrapper],
+.dark [cmdk-dialog],
+.dark [data-fd-search] {
+  --color-fd-background: #1a1b26;
+  --color-fd-card: #1f2335;
+  --color-fd-popover: #1f2335;
+  --color-fd-popover-foreground: #c0caf5;
+  --color-fd-border: #292e42;
+  --color-fd-primary: #7aa2f7;
+  --color-fd-muted-foreground: #565f89;
+}
+
+.dark [data-fd-search] input,
+.dark [cmdk-input] {
+  color: #c0caf5;
+  caret-color: #7aa2f7;
+}
+
+.dark [data-fd-search] [aria-selected='true'],
+.dark [cmdk-item][aria-selected='true'] {
+  background-color: rgba(122, 162, 247, 0.12);
+  color: #7aa2f7;
+}
+
+/*
+ * Fumadocs card components in docs
+ */
+.dark [data-fd-card],
+.dark .nd-card {
+  border-color: #292e42;
+  background-color: #1f2335;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.dark [data-fd-card]:hover,
+.dark .nd-card:hover {
+  border-color: #3b4261;
+  background-color: rgba(31, 35, 53, 0.8);
+}
+
+/*
+ * TOC (table of contents) active item
+ */
+.dark [data-fd-toc] a[data-active='true'] {
+  color: #7aa2f7;
+  border-left-color: #7aa2f7;
+}
+
+.dark [data-fd-toc] a:hover {
+  color: #c0caf5;
+}
+
+/*
+ * Tabs in docs (code tabs, etc.)
+ */
+.dark [role='tablist'] button[data-state='active'] {
+  color: #7aa2f7;
+  border-bottom-color: #7aa2f7;
+}
+
+.dark [role='tablist'] button {
+  color: #565f89;
+  transition: color 0.15s ease;
+}
+
+.dark [role='tablist'] button:hover {
+  color: #a9b1d6;
+}
+
+/*
+ * Callout / admonition accents
+ */
+.dark [data-fd-callout='info'] {
+  border-color: rgba(122, 162, 247, 0.3);
+  background-color: rgba(122, 162, 247, 0.06);
+}
+
+.dark [data-fd-callout='warn'],
+.dark [data-fd-callout='warning'] {
+  border-color: rgba(255, 158, 100, 0.3);
+  background-color: rgba(255, 158, 100, 0.06);
+}
+
+.dark [data-fd-callout='error'],
+.dark [data-fd-callout='danger'] {
+  border-color: rgba(247, 118, 142, 0.3);
+  background-color: rgba(247, 118, 142, 0.06);
+}
+
+.dark [data-fd-callout='tip'] {
+  border-color: rgba(158, 206, 106, 0.3);
+  background-color: rgba(158, 206, 106, 0.06);
+}
+
+/*
+ * Navbar — subtle bottom border accent
+ */
+.dark nav[data-fd-nav] {
+  border-bottom-color: #292e42;
+  background-color: rgba(26, 27, 38, 0.85);
+  backdrop-filter: blur(12px);
+}
+
+/*
+ * Breadcrumb links
+ */
+.dark [data-fd-breadcrumb] a {
+  color: #565f89;
+  transition: color 0.15s ease;
+}
+
+.dark [data-fd-breadcrumb] a:hover {
+  color: #7aa2f7;
+}
+
+/*
+ * Global hover transitions
+ */
+.dark a,
+.dark button {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/*
+ * Selection color
+ */
+.dark ::selection {
+  background-color: #283457;
+  color: #c0caf5;
+}
+
+/*
+ * RunExample widget — ensure CodeMirror editors fill containers
+ */
+[style*="resize"] .cm-editor {
+  height: 100% !important;
+}
+[style*="resize"] .cm-scroller {
+  overflow: auto !important;
+}
+
+/*
+ * Hidden scrollbars — content still scrollable
+ */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+}
+
+/*
+ * Landing page — theme-aware colors
+ */
+.landing-card {
+  background-color: #1f2335;
+  border-color: #292e42;
+}
+:root:not(.dark) .landing-card {
+  background-color: #f0f1f5;
+  border-color: #c4c8da;
+}
+
+.landing-surface {
+  background-color: #1f2335;
+  border-color: #292e42;
+}
+:root:not(.dark) .landing-surface {
+  background-color: #e8e9ed;
+  border-color: #c4c8da;
+}
+
+.landing-text-strong { color: #c0caf5; }
+:root:not(.dark) .landing-text-strong { color: #343b58; }
+
+.landing-text { color: #a9b1d6; }
+:root:not(.dark) .landing-text { color: #3760bf; }
+
+.landing-text-muted { color: #565f89; }
+:root:not(.dark) .landing-text-muted { color: #848cb5; }
+
+.landing-code-bg {
+  background-color: #1a1b26 !important;
+  border-color: #292e42;
+}
+:root:not(.dark) .landing-code-bg {
+  background-color: #e1e2e7 !important;
+  border-color: #c4c8da;
+}
+
+.landing-code-header {
+  background-color: #1f2335;
+  border-color: #292e42;
+  color: #565f89;
+}
+:root:not(.dark) .landing-code-header {
+  background-color: #e8e9ed;
+  border-color: #c4c8da;
+  color: #848cb5;
+}
+
+/*
+ * Shimmer button — single white light rotating around border, slow
+ */
+.shimmer-btn {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #9ece6a;
+}
+:root:not(.dark) .shimmer-btn {
+  background: #7ba34e;
+}
+.shimmer-btn::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: 9px;
+  background: conic-gradient(
+    from var(--shimmer-angle, 0deg),
+    transparent 0%,
+    rgba(255,255,255,0.8) 10%,
+    #fff 12%,
+    transparent 20%
+  );
+  animation: shimmer-spin 5s linear infinite;
+}
+.shimmer-btn::after {
+  content: '';
+  position: absolute;
+  inset: 1.5px;
+  z-index: -1;
+  border-radius: 6.5px;
+  background: #9ece6a;
+}
+:root:not(.dark) .shimmer-btn::after {
+  background: #7ba34e;
+}
+@keyframes shimmer-spin {
+  to { --shimmer-angle: 360deg; }
+}
+@property --shimmer-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/*
+ * Shiki dual theme — class-based dark mode
+ * Light colors are the default (inline style), dark via CSS variables
+ */
+html.dark .shiki,
+html.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+}

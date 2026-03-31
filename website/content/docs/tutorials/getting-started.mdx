@@ -1,0 +1,96 @@
+---
+title: Getting Started
+description: Build the SQLite extension and run your first JSONata query in 5 minutes
+---
+
+JSONata is a lightweight JSON query and transformation language — think jq, but with lambdas and expressive path syntax. **gnata-sqlite** brings JSONata directly into SQLite.
+
+Try an expression right here — type `Account.Name` or `$count(Account.Order)`:
+
+<RunExample
+  expression='Account.Order.Product.Price'
+  input='{"Account":{"Name":"Firefly","Order":[{"OrderID":"order103","Product":[{"Name":"Bowler Hat","Price":34.45,"Quantity":2},{"Name":"Trilby hat","Price":21.67,"Quantity":1}]},{"OrderID":"order104","Product":[{"Name":"Cloak","Price":107.99,"Quantity":1}]}]}}'
+  height={160}
+/>
+
+## Prerequisites
+
+- **Go 1.25+** — `go version`
+- **CGo enabled** — `go env CGO_ENABLED` (should print `1`)
+- **C compiler** — GCC or Clang (Xcode Command Line Tools on macOS)
+- **SQLite 3 CLI** — `sqlite3 --version`
+- **Git**
+
+## 1. Clone the repository
+
+```bash
+git clone https://github.com/rbbydotdev/gnata-sqlite.git
+cd gnata-sqlite
+```
+
+## 2. Build the SQLite extension
+
+```bash
+make extension
+```
+
+Produces `gnata_jsonata.dylib` (macOS) or `gnata_jsonata.so` (Linux).
+
+## 3. Load into SQLite
+
+```bash
+sqlite3
+```
+
+```sql
+.load ./gnata_jsonata sqlite3_jsonata_init
+```
+
+No output means success.
+
+## 4. Create test data
+
+```sql
+CREATE TABLE books (data JSON);
+
+INSERT INTO books (data) VALUES ('{"title": "Dune", "author": "Frank Herbert", "year": 1965}');
+INSERT INTO books (data) VALUES ('{"title": "Neuromancer", "author": "William Gibson", "year": 1984}');
+INSERT INTO books (data) VALUES ('{"title": "Snow Crash", "author": "Neal Stephenson", "year": 1992}');
+```
+
+## 5. Run a `jsonata()` query
+
+Extract titles:
+
+```sql
+SELECT jsonata('title', data) FROM books;
+-- "Dune"
+-- "Neuromancer"
+-- "Snow Crash"
+```
+
+Concatenate title and year:
+
+```sql
+SELECT jsonata('title & " (" & $string(year) & ")"', data) FROM books;
+-- "Dune (1965)"
+-- "Neuromancer (1984)"
+-- "Snow Crash (1992)"
+```
+
+## 6. Run a `jsonata_query()` aggregate
+
+Filter across all rows:
+
+```sql
+SELECT jsonata_query('$[year > 1970].title', data) FROM books;
+-- ["Neuromancer","Snow Crash"]
+```
+
+The extension gathered every row's JSON into an array, then JSONata filtered and projected in one pass.
+
+## What's next
+
+The extension also provides `jsonata_each()`, `jsonata_set()`, and `jsonata_delete()`. See the [SQLite Functions Reference](/docs/reference/sqlite-functions) for full documentation.
+
+For realistic worked examples, see [Real-World Queries](/docs/guides/real-world-queries).

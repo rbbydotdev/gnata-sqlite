@@ -1,0 +1,138 @@
+---
+title: Architecture
+description: How gnata-sqlite's layers fit together — from Go engine to SQLite extension to WASM LSP to CodeMirror editor
+---
+
+gnata-sqlite is a stack: Go engine, SQLite extension, language server, editor component, and playground. Each layer exists because the one below it created a need.
+
+## Layer diagram
+
+```
+┌─────────────────────────────────────────────────┐
+│          @gnata-sqlite/playground               │
+│         (Vite + React, two modes)               │
+├─────────────────────┬───────────────────────────┤
+│  @gnata-sqlite/react│     sql.js + gnata ext    │
+│  (hooks, components)│     (WASM SQLite with     │
+├─────────────────────┤      loadable extension)  │
+│  @gnata-sqlite/     │                           │
+│    codemirror       │                           │
+│  (sync HL + async   │                           │
+│   WASM LSP)         │                           │
+├─────────────────────┼───────────────────────────┤
+│  gnata-lsp.wasm     │     sqlite/ extension     │
+│  (TinyGo, 182KB)    │     (CGo, c-shared)       │
+├─────────────────────┴───────────────────────────┤
+│            gnata core engine (Go)               │
+│    GJSON fast path  ←→  full AST evaluator      │
+│         single dep: tidwall/gjson               │
+└─────────────────────────────────────────────────┘
+         ↑ schema JSON flows down from backend
+```
+
+## Core engine
+
+Pure Go JSONata 2.x implementation. Single external dependency: `tidwall/gjson`. Minimal dependencies keep CGo and TinyGo builds feasible.
+
+### Two-tier evaluation
+
+| Tier | Handles | How |
+|------|---------|-----|
+| **GJSON fast path** | Dotted paths (`a.b.c`), path-vs-literal comparisons, built-in functions on pure paths | Zero-copy scan, 10M+ ops/sec |
+| **Full AST interpreter** | Lambdas, higher-order functions, sorting, grouping, conditionals, everything else | Standard tree-walking evaluator |
+
+`Compile()` runs `AnalyzeFastPath` on the AST. If eligible, evaluation bypasses the interpreter entirely. Both tiers share the same `Expression` type and `Eval` method — callers never choose.
+
+### StreamEvaluator
+
+For batch workloads. Manages compiled expressions, evaluates all against each incoming event.
+
+- **Schema-aware caching** — builds a `GroupPlan` per distinct JSON schema (set of fields present), caches which expressions qualify for GJSON fast path
+- **Lock-free reads** — copy-on-write atomic pointer for `EvalMany`
+- **Bounded LRU** — evicts least-recently-used schemas when capacity is exceeded
+
+## SQLite extension
+
+Built with Go's `-buildmode=c-shared`, speaks SQLite's loadable extension API through a C bridge.
+
+### Registered functions
+
+| Function | Type | Purpose |
+|----------|------|---------|
+| `jsonata(expr, json)` | scalar | Evaluate expression per row |
+| `jsonata_query(expr, json)` | aggregate | Collect rows, evaluate over array |
+| `jsonata_each(json, expr)` | table-valued | Expand array/object result into rows |
+| `jsonata_set(json, path, value)` | mutation | Set value at dotted path |
+| `jsonata_delete(json, path)` | mutation | Remove key at dotted path |
+
+All five share an expression cache (`sync.Map` keyed by expression string) — SQLite typically calls the same expression across thousands of rows.
+
+See the [SQLite functions reference](/docs/reference/sqlite-functions) for full signatures.
+
+## TinyGo WASM LSP
+
+**Why not rewrite in JS?** Two parsers means divergent behavior. The Go parser has 1,778 test cases — rewriting risks losing that coverage.
+
+### One codebase, two targets
+
+| File | Target | Transport |
+|------|--------|-----------|
+| `main_wasm.go` | TinyGo WASM (browser) | `syscall/js` global functions |
+| `main_lsp.go` | Native binary (VS Code, Neovim) | JSON-RPC 2.0 over stdin/stdout |
+| `diagnostics.go`, `completions.go`, `hover.go`, `schema.go`, `funcinfo.go`, `marshal.go` | Both | Shared logic |
+
+**Why TinyGo?** Standard Go WASM: ~5.3 MB. TinyGo: 182 KB (27x smaller). For a module that loads on every page visit, that is the difference between instant and a loading spinner.
+
+**Trade-off:** No `reflect` means no `encoding/json`. `marshal.go` is a hand-written, reflect-free JSON serializer. More code to maintain, but avoids runtime bloat.
+
+See [TinyGo WASM](/docs/explanation/tinygo-wasm) for the full build pipeline.
+
+## CodeMirror 6 editor
+
+`@gnata-sqlite/codemirror` provides JSONata language support with a two-tier architecture:
+
+| Tier | What | Dependency |
+|------|------|------------|
+| **Sync highlighting** | Lezer grammar, instant on mount | None |
+| **Async WASM intelligence** | Diagnostics, autocomplete, hover docs | `gnata-lsp.wasm` |
+
+Degrades gracefully: if WASM fails to load, highlighting and bracket matching still work.
+
+**Context-aware autocomplete:** Lexes from position zero to cursor, classifies context (function name, field path, or top-level identifier), then suggests built-in functions or walks the schema tree to suggest nested keys. Type `Account.` and see the available fields immediately.
+
+See the [editor API reference](/docs/reference/editor-api).
+
+## The playground
+
+`@gnata-sqlite/playground` — Vite + React app, two modes:
+
+- **SQLite mode** — sql.js + gnata WASM extension, full SQL environment with `jsonata()` in queries
+- **gnata mode** — pure expression evaluator via `@gnata-sqlite/react`, same hooks and components available for embedding
+
+## Backend-driven autocomplete via schemas
+
+In production, data might be millions of rows — shipping it to the browser for autocomplete is not an option.
+
+**Solution: a schema protocol.** Lightweight JSON describing document structure:
+
+```json
+{"fields":{"id":{"type":"number"},"data":{"type":"object","fields":{"name":{"type":"string"}}}}}
+```
+
+- Backend generates the schema (sampling, inference, etc.)
+- Frontend passes it to `initWasm()` or CodeMirror completion config
+- WASM LSP walks the schema tree to suggest fields at cursor position
+- The editor never sees actual data
+
+## Why this shape
+
+Each layer emerged from a concrete need:
+
+1. Fast hot-path evaluation in SQLite → GJSON fast path
+2. JSONata in SQL → CGo extension with expression cache
+3. Extension hard to use without feedback → LSP
+4. LSP in browsers → TinyGo WASM (182 KB)
+5. WASM needs an editor → CodeMirror package
+6. Production editors need data awareness without data → schema protocol
+
+Each decision constrains the next. Single-dependency engine makes TinyGo feasible. TinyGo makes small WASM possible. Small WASM makes per-page-load acceptable.

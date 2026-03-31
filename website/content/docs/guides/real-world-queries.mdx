@@ -1,0 +1,120 @@
+---
+title: Real-World Queries
+description: Practical examples of gnata-sqlite for common data tasks — with benchmarks and SQL comparisons
+---
+
+# Real-World Queries
+
+Task-oriented recipes for common JSON operations in SQLite. Full example set with 100K-row benchmarks: [sqlite/EXAMPLES.md](https://github.com/rbbydotdev/gnata-sqlite/blob/main/sqlite/EXAMPLES.md).
+
+## Per-row field extraction
+
+```sql
+SELECT id, status,
+       jsonata('items.product', data) as products,
+       jsonata('shipping.method', data) as ship_method,
+       jsonata('shipping.cost', data) as ship_cost
+FROM orders LIMIT 20;
+```
+
+## Per-row math
+
+JSONata auto-maps `items.(price * quantity)` across the array, then `$sum` aggregates:
+
+```sql
+SELECT id,
+       jsonata('$round($sum(items.(price * quantity)), 2)', data) as subtotal,
+       jsonata('$count(items)', data) as num_items,
+       jsonata('items[price > 200].product', data) as premium
+FROM orders LIMIT 20;
+```
+
+## Revenue by status (GROUP BY)
+
+```sql
+SELECT status, count(*) as orders,
+       jsonata_query('{
+         "revenue":  $round($sum(total), 2),
+         "avg":      $round($average(total), 2),
+         "min":      $min(total),
+         "max":      $max(total)
+       }', data) as stats
+FROM orders GROUP BY status ORDER BY orders DESC;
+```
+
+## Full dashboard in one expression
+
+```sql
+SELECT jsonata_query('{
+  "total_orders":    $count($),
+  "total_revenue":   $round($sum(total), 2),
+  "avg_order_value": $round($average(total), 2),
+  "min_order":       $min(total),
+  "max_order":       $max(total),
+  "avg_items":       $round($average($map($, function($v){ $count($v.items) })), 2)
+}', data) as dashboard
+FROM orders;
+```
+
+## Filtered aggregates
+
+ClickHouse-style conditional aggregation with `$filter`:
+
+```sql
+SELECT jsonata_query('{
+  "total_orders":       $count($),
+  "high_value_revenue": $round($sum($filter($, function($v){$v.total > 500}).total), 2),
+  "high_value_count":   $count($filter($, function($v){$v.total > 500})),
+  "small_orders":       $count($filter($, function($v){$v.total <= 100}))
+}', data) as report
+FROM orders;
+```
+
+## Join + aggregate
+
+SQL JOIN for relational work, gnata for JSON aggregation:
+
+```sql
+SELECT c.name, c.city, count(*) as orders,
+       jsonata_query('{
+         "spent":   $round($sum(total), 2),
+         "avg":     $round($average(total), 2),
+         "biggest": $max(total)
+       }', data) as stats
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+GROUP BY c.id ORDER BY orders DESC LIMIT 15;
+```
+
+## String transforms
+
+```sql
+SELECT id,
+       jsonata('$uppercase(items[0].product)', data) as first_product,
+       jsonata('$join(items.category, ", ")', data) as categories,
+       jsonata('$uppercase(shipping.method) & " ($" & $string(shipping.cost) & ")"', data) as label
+FROM orders LIMIT 15;
+```
+
+## Dynamic expressions from a table
+
+Filter expressions stored as data:
+
+```sql
+SELECT em.subject, el.name as label
+FROM email_message em
+JOIN email_classification ec ON ec.email_id = em.id
+CROSS JOIN email_label el
+WHERE jsonata(el.expression, ec.parsed_data)
+```
+
+## When to use which function
+
+| Scenario | Function | Why |
+|----------|----------|-----|
+| Extract/transform per row | `jsonata()` | Scalar, cached expression |
+| Aggregate across rows | `jsonata_query()` | Streaming accumulators |
+| Expand arrays into rows | `jsonata_each()` | Table-valued function |
+| Modify JSON documents | `jsonata_set()` / `jsonata_delete()` | Immutable copy-on-write |
+| Multi-column input | `jsonata(expr, k1, v1, ...)` | Builds JSON from pairs |
+| Error-tolerant extraction | `jsonata(expr, data, default)` | Returns default on error |

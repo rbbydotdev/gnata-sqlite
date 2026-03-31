@@ -1,0 +1,66 @@
+---
+title: TinyGo WASM
+description: Why TinyGo for the browser LSP — 27x smaller than standard Go WASM, and the trade-offs involved
+---
+
+## Why WASM for the LSP
+
+Browser editors need real-time diagnostics, autocomplete, and hover docs. Latency budget: ~50ms. Server round-trips per keystroke are not viable.
+
+**Why not rewrite in JS?** Two parsers means divergent behavior. The Go parser has 1,778 test cases — rewriting risks losing that coverage.
+
+WASM compiles the actual Go parser to run in the browser. Same code, same behavior, same tests.
+
+## Standard Go vs TinyGo
+
+| | Standard Go | TinyGo |
+|--|------------|--------|
+| Binary size | ~5.3 MB | 182 KB (85 KB gzipped) |
+| Ratio | 1x | **27x smaller** |
+| GC | Concurrent tri-color | Conservative |
+| Goroutines | Full scheduler | Not in WASM |
+| Reflect | Full | Minimal |
+
+TinyGo's constraints line up with what an in-browser LSP actually needs: synchronous, single-threaded, no reflection.
+
+## The reflect problem
+
+Go's `encoding/json` uses reflect heavily. TinyGo's reflect is incomplete, so `encoding/json` does not work.
+
+**Solution: `marshal.go`** — a hand-written, reflect-free JSON serializer. Walks the parser's AST node types, emits JSON strings directly into a `strings.Builder`.
+
+Trade-offs:
+- More manual code — every new response type needs a hand-written serializer
+- Actually faster than `encoding/json` (no reflection overhead)
+- Fully explicit serialization behavior, no struct tag surprises
+
+## Build tags for dual targeting
+
+| File | Build tag | Purpose |
+|------|-----------|---------|
+| `main_wasm.go` | `//go:build js && wasm` | Browser entry point via `syscall/js` |
+| `main_lsp.go` | `//go:build !js` | CLI entry point, JSON-RPC over stdio |
+| Everything else | None | Shared across both targets |
+
+The shared surface area is large; the platform-specific surface area is two small files.
+
+## TinyGo constraints and workarounds
+
+| Constraint | Workaround |
+|-----------|------------|
+| No reflect | Custom `marshal.go` |
+| No goroutines in WASM | All LSP calls are synchronous (fine — microseconds to low milliseconds each) |
+| Conservative GC | Occasional pauses, imperceptible at editor interaction speeds |
+| Limited stdlib | LSP code stays self-contained — no `net/http`, `os/exec`, `database/sql` |
+
+General principle: if the code is a pure function from input to output, TinyGo handles it well.
+
+## The result
+
+- **182 KB** module, **85 KB** over the wire (gzipped)
+- Loads in under 100ms on a typical connection
+- Full diagnostics, autocomplete across 70+ functions, hover documentation
+- Same Go code paths, same test coverage, two compilation targets
+- No server dependency, no parser rewrite
+
+For how this fits into the broader system, see [Architecture](/docs/explanation/architecture). To try the editor, see [Editor Playground](/docs/tutorials/editor-playground).

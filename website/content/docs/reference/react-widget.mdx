@@ -1,0 +1,170 @@
+---
+title: React Widget API
+description: Complete API reference for @gnata-sqlite/react — hooks, components, theme, and utilities
+---
+
+# React Widget API
+
+```bash
+npm install @gnata-sqlite/react
+```
+
+---
+
+## Hooks
+
+### `useJsonataWasm(options)`
+
+Loads the WASM modules. Call once, pass the result to components and other hooks.
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `evalWasmUrl` | `string` | yes | URL to `gnata.wasm` |
+| `evalExecUrl` | `string` | yes | URL to `wasm_exec.js` |
+| `lspWasmUrl` | `string` | no | URL to `gnata-lsp.wasm` |
+| `lspExecUrl` | `string` | no | URL to `lsp-wasm_exec.js` |
+
+**Returns `WasmState`:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `isReady` | `boolean` | Eval module loaded |
+| `isLspReady` | `boolean` | LSP module loaded |
+| `error` | `Error \| null` | Loading error |
+| `gnataEval` | `(expr, json) => string` | Evaluate expression |
+| `gnataCompile` | `(expr) => string` | Compile to AST JSON |
+| `gnataDiagnostics` | `(doc) => string` | Get parse diagnostics |
+| `gnataCompletions` | `(doc, pos, schema) => string` | Get completions |
+| `gnataHover` | `(doc, pos, schema) => string \| null` | Get hover info |
+
+---
+
+### `useJsonataEval(expression, inputJson, wasm)`
+
+Evaluates an expression with 300ms debouncing.
+
+**Returns `JsonataEvalResult`:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `result` | `string \| null` | Formatted result |
+| `error` | `string \| null` | Error message |
+| `timing` | `number \| null` | Evaluation time in ms |
+
+---
+
+### `useJsonataSchema(inputJson)`
+
+Builds autocomplete schema from JSON data. Memoized.
+
+**Returns:** `string` — JSON schema for autocomplete.
+
+---
+
+### `useJsonataEditor(options)`
+
+Low-level hook creating a CodeMirror 6 `EditorView`.
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `initialValue` | `string` | no | Initial content |
+| `onChange` | `(value: string) => void` | no | Content change callback |
+| `onRun` | `() => void` | no | Cmd+Enter callback |
+| `schema` | `string` | no | Autocomplete schema |
+| `wasm` | `WasmState` | no | WASM state for LSP |
+| `theme` | `'dark' \| 'light'` | no | Color theme |
+| `getInputJson` | `() => string` | no | Current input JSON for autocomplete |
+| `placeholder` | `string` | no | Placeholder text |
+| `readOnly` | `boolean` | no | Read-only mode |
+| `language` | `'jsonata' \| 'json'` | no | Language mode |
+
+**Returns:** `{ ref: RefCallback<HTMLElement>, view: EditorView | null }`
+
+---
+
+## Components
+
+### `<JsonataPlayground>`
+
+Full three-panel widget: expression + input + result.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `defaultExpression` | `string` | `''` | Initial expression |
+| `defaultInput` | `string` | `'{}'` | Initial JSON input |
+| `wasm` | `WasmState` | — | From `useJsonataWasm` |
+| `theme` | `'dark' \| 'light'` | `'dark'` | Color theme |
+| `height` | `number` | `400` | Panel height in px |
+| `onExpressionChange` | `(value: string) => void` | — | Expression change callback |
+| `onInputChange` | `(value: string) => void` | — | Input change callback |
+
+### `<JsonataEditor>`
+
+Expression editor with optional WASM features.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `string` | — | Controlled value |
+| `onChange` | `(value: string) => void` | — | Change callback |
+| `schema` | `string` | — | Autocomplete schema |
+| `wasm` | `WasmState` | — | Optional — omit for highlighting only |
+| `theme` | `'dark' \| 'light'` | `'dark'` | Color theme |
+| `placeholder` | `string` | — | Placeholder text |
+| `getInputJson` | `() => string` | — | For introspective autocomplete |
+| `onRun` | `() => void` | — | Cmd+Enter callback |
+
+### `<JsonataInput>`
+
+JSON input editor.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `string` | — | Controlled value |
+| `onChange` | `(value: string) => void` | — | Change callback |
+| `theme` | `'dark' \| 'light'` | `'dark'` | Color theme |
+
+### `<JsonataResult>`
+
+Read-only result display.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `string \| null` | — | Result (green) |
+| `error` | `string \| null` | — | Error (red) |
+| `timing` | `number \| null` | — | Eval time in ms |
+| `theme` | `'dark' \| 'light'` | `'dark'` | Color theme |
+
+---
+
+## Theme
+
+### `tokyoNightTheme(mode)`
+
+Returns CodeMirror extensions for the Tokyo Night theme.
+
+```tsx
+import { tokyoNightTheme } from '@gnata-sqlite/react'
+const extensions = [tokyoNightTheme('dark')]
+```
+
+### Color exports
+
+```tsx
+import { darkColors, lightColors, darkTokenColors, lightTokenColors } from '@gnata-sqlite/react'
+```
+
+- `darkColors` / `lightColors` — UI colors (`bg`, `surface`, `text`, `accent`, `green`, `error`, `border`, etc.)
+- `darkTokenColors` / `lightTokenColors` — Syntax token colors (`keyword`, `string`, `number`, `function`, `property`, `operator`, etc.)
+
+---
+
+## Utilities
+
+| Export | Description |
+|--------|-------------|
+| `jsonataStreamLanguage` | CodeMirror `StreamLanguage` for JSONata |
+| `buildSchema(json)` | Build autocomplete schema from JSON |
+| `collectKeys(obj, map, depth)` | Recursively collect object keys |
+| `allKeysFromJson(json, partial)` | Get completion items from JSON string |
+| `formatHoverMarkdown(md)` | Convert LSP hover markdown to HTML |
+| `formatTiming(ms)` | Format milliseconds to readable string |

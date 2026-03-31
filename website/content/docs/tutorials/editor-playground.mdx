@@ -1,0 +1,126 @@
+---
+title: Editor & Playground
+description: Set up a CodeMirror 6 JSONata editor with autocomplete, hover docs, and live diagnostics
+---
+
+## What gets built
+
+A browser-based JSONata editor with:
+
+- Syntax highlighting (instant, no WASM)
+- Context-aware autocomplete
+- Hover documentation with function signatures
+- Live diagnostics with JSONata error codes
+
+The WASM module is 182 KB (85 KB gzipped).
+
+## Prerequisites
+
+- **Node.js 18+** and a package manager
+- A frontend project that can import ES modules
+- For full features: `gnata-lsp.wasm` and `lsp-wasm_exec.js` (covered in Step 3)
+
+## Step 1 — Install
+
+```bash
+npm install codemirror @gnata-sqlite/codemirror
+```
+
+## Step 2 — Syntax highlighting only (no WASM)
+
+```html
+<div id="editor"></div>
+```
+
+```typescript
+import { EditorView, basicSetup } from "codemirror"
+import { jsonata } from "@gnata-sqlite/codemirror"
+
+new EditorView({
+  extensions: [basicSetup, jsonata()],
+  parent: document.getElementById("editor")!,
+})
+```
+
+Type `Account.Order.Product.Price` — tokens highlight immediately.
+
+## Step 3 — Full setup with WASM LSP
+
+Place the WASM files where the app can serve them (e.g. `public/` in Vite):
+
+```
+public/
+  gnata-lsp.wasm
+  lsp-wasm_exec.js
+```
+
+Use `jsonataFull` instead of `jsonata`:
+
+```typescript
+import { EditorView, basicSetup } from "codemirror"
+import { jsonataFull, initWasm } from "@gnata-sqlite/codemirror"
+
+await initWasm("/gnata-lsp.wasm", "/lsp-wasm_exec.js")
+
+new EditorView({
+  extensions: [basicSetup, jsonataFull({ schema: "" })],
+  parent: document.getElementById("editor")!,
+})
+```
+
+Invalid expressions now show red underlines. Hover over functions for signatures. `Ctrl+Space` / `Cmd+Space` triggers autocomplete.
+
+## Step 4 — Schema for field autocomplete
+
+Pass a JSON string describing the data shape:
+
+```typescript
+const schema = JSON.stringify({
+  fields: {
+    Account: {
+      type: "object",
+      fields: {
+        Name: { type: "string" },
+        Order: {
+          type: "array",
+          fields: {
+            Product: {
+              type: "object",
+              fields: {
+                Price: { type: "number" },
+                Quantity: { type: "number" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+})
+
+new EditorView({
+  extensions: [basicSetup, jsonataFull({ schema })],
+  parent: document.getElementById("editor")!,
+})
+```
+
+Type `Account.` → suggests `Name`, `Order`. Type `Account.Order.Product.` → suggests `Price`, `Quantity`.
+
+## Step 5 — Build WASM from source
+
+Requires [TinyGo](https://tinygo.org/getting-started/install/). See [Why TinyGo?](/docs/explanation/tinygo-wasm) for background.
+
+```bash
+make wasm
+```
+
+Produces `gnata-lsp.wasm` (~182 KB) and `lsp-wasm_exec.js`. Copy both to the static assets directory.
+
+## Try it live
+
+[gnata playground](https://rbby.dev/gnata-sqlite) — try the editor in the browser now.
+
+## Next steps
+
+- [Editor API reference](/docs/reference/editor-api) — full API for `@gnata-sqlite/codemirror`
+- [Why TinyGo?](/docs/explanation/tinygo-wasm) — build trade-offs

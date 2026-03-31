@@ -1,6 +1,6 @@
 # gnata-sqlite
 
-Full [JSONata 2.x](https://jsonata.org) implementation in Go — with a loadable SQLite extension, streaming query optimizer, and 85KB WASM LSP.
+End-to-end [JSONata 2.x](https://jsonata.org) in Go — from a loadable SQLite extension to a composable React editor with context-aware autocomplete, everything needed to run, write, and edit JSONata expressions.
 
 [![CI](https://github.com/rbbydotdev/gnata-sqlite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbbydotdev/gnata-sqlite/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rbbydotdev/gnata-sqlite.svg)](https://pkg.go.dev/github.com/rbbydotdev/gnata-sqlite)
@@ -9,11 +9,12 @@ Full [JSONata 2.x](https://jsonata.org) implementation in Go — with a loadable
 
 ## Highlights
 
-- **5M+ eval ops/sec** — two-tier evaluator with GJSON fast path hitting 10M+ ops/sec for simple paths
 - **Full JSONata 2.x spec** — paths, wildcards, lambdas, closures, higher-order functions, 50+ stdlib functions. 1,778 conformance tests, 0 failures
-- **SQLite extension** — `jsonata()`, `jsonata_query()`, `jsonata_each()` as loadable functions with a built-in query planner
-- **85KB WASM LSP** — TinyGo-compiled language server for in-browser diagnostics and autocomplete
-- **Lock-free streaming** — `StreamEvaluator` with schema-keyed plan caching for high-throughput batch workloads
+- **SQLite extension** — `jsonata()`, `jsonata_query()`, `jsonata_each()` as loadable functions with a built-in query planner that matches native SQL performance
+- **React editor widget** — composable hooks and components (`@gnata-sqlite/react`) for embedding a JSONata editor in any app, with autocomplete, hover docs, and live diagnostics
+- **85KB WASM LSP** — TinyGo-compiled language server powering in-browser editor features from the same Go codebase as the native LSP
+- **Context-aware autocomplete** — the editor evaluates prefix expressions against live data to suggest nested keys, enabling end users to explore and write expressions without knowing the schema upfront
+- **5M+ eval ops/sec** — two-tier evaluator with GJSON fast path hitting 10M+ ops/sec for simple paths
 
 ## Quick Start
 
@@ -74,26 +75,28 @@ See [sqlite/README.md](sqlite/README.md) for full docs. Query optimization detai
 | `gnata` (root) | Core JSONata 2.x engine — full spec, two-tier eval, streaming |
 | [`sqlite/`](sqlite/README.md) | SQLite extension — loadable functions, query planner, mutations |
 | [`editor/`](editor/README.md) | CodeMirror 6 language support + TinyGo WASM LSP |
+| [`react/`](react/README.md) | Composable React widget — hooks, components, and full playground |
 
 ## Building
 
 ```bash
-# Core library (pure Go)
-go build ./...
-
-# SQLite extension (requires CGo)
-go build -buildmode=c-shared -o gnata_jsonata.dylib ./sqlite
-
-# WASM LSP (requires TinyGo)
-tinygo build -o gnata-lsp.wasm -target wasm ./editor
-
-# CodeMirror npm package
-cd editor/codemirror && npm install && npm run build
+make all          # SQLite extension + WASM modules + CodeMirror package
+make extension    # SQLite extension only (.dylib / .so)
+make wasm         # WASM modules (gnata.wasm + gnata-lsp.wasm)
+make test         # Go tests + React widget tests + playground tests
+make playground   # Build WASM + start playground dev server
+make website      # Start docs site dev server
 ```
+
+See `Makefile` for all targets.
 
 ## Playground
 
-Open `playground.html` or visit the [live playground](https://rbbydotdev.github.io/gnata-sqlite/) for interactive testing of JSONata expressions and the SQLite extension.
+Visit the [live playground](https://rbbydotdev.github.io/gnata-sqlite/) for interactive testing of JSONata expressions and the SQLite extension. To run locally:
+
+```bash
+cd playground && pnpm install && pnpm dev
+```
 
 ## Contributing
 

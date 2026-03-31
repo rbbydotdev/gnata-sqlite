@@ -1,0 +1,171 @@
+---
+title: SQLite Functions
+description: Complete reference for all gnata-sqlite extension functions — scalar, aggregate, table-valued, and mutation
+---
+
+# SQLite Functions
+
+The extension registers 5 functions plus a multi-column variant and format functions.
+
+## `jsonata(expression, json_data)` — scalar
+
+Evaluates a JSONata expression against a single JSON value.
+
+```sql
+SELECT jsonata('name', '{"name": "Alice"}');
+-- "Alice"
+
+SELECT jsonata('$uppercase(name)', data) FROM users;
+
+SELECT jsonata('items[price > 100].name', data) FROM orders;
+
+SELECT jsonata('age >= 18 ? "adult" : "minor"', data) FROM people;
+```
+
+| Arg | Type | Description |
+|-----|------|-------------|
+| `expression` | TEXT | JSONata expression |
+| `json_data` | TEXT | JSON string to evaluate against |
+
+If either argument is NULL, returns NULL.
+
+**Return type mapping:**
+
+| JSONata result | SQLite type |
+|---|---|
+| string | TEXT |
+| integer number | INTEGER |
+| fractional number | REAL |
+| boolean | INTEGER (0 or 1) |
+| null / undefined | NULL |
+| array or object | TEXT (JSON) with subtype 'J' |
+
+### Error handling with default value
+
+Optional third argument — returns the default on error instead of failing:
+
+```sql
+SELECT jsonata('$number(amount)', '{"amount":"invalid"}', 0);
+-- 0
+```
+
+### Multi-column form
+
+Pass alternating key-value pairs to build a JSON object from SQL columns:
+
+```sql
+SELECT jsonata(
+  'name & " (" & city & ") — $" & $string(data.total)',
+  'name', c.name,
+  'city', c.city,
+  'data', o.data
+) FROM orders o JOIN customers c ON c.id = o.customer_id;
+```
+
+**Value type handling:**
+
+| SQLite type | JSON result |
+|---|---|
+| INTEGER / REAL | Number |
+| TEXT (JSON subtype or looks like `{...}` / `[...]`) | Nested JSON |
+| TEXT (plain) | Quoted string |
+| NULL | `null` |
+
+---
+
+## `jsonata_query(expression, json_data)` — aggregate
+
+Collects all rows in a group into an array, then evaluates the expression. Like `sum()` or `group_concat()` but with full JSONata.
+
+```sql
+SELECT jsonata_query('$sum(amount)', data) FROM orders;
+
+SELECT jsonata_query('{
+  "total":    $count($),
+  "revenue":  $sum($filter($, function($v){ $v.action = "purchase" }).amount),
+  "users":    $count($distinct(user))
+}', data) FROM events;
+
+-- With GROUP BY
+SELECT status, jsonata_query('$sum(amount)', data) as total
+FROM orders GROUP BY status;
+```
+
+### Streaming optimization
+
+Expressions are decomposed at compile time into streaming accumulators.
+
+| Pattern | Memory | Notes |
+|---|---|---|
+| `$sum(path)`, `$count()`, `$max`, `$min`, `$average` | O(1) | Streaming accumulator |
+| `$sum($filter($, fn).path)` | O(1) | Predicate + conditional accumulator |
+| `$count($distinct(path))` | O(unique) | Hash set |
+| `{ key: agg, key: agg, ... }` | O(1) | Parallel accumulators |
+| `$sort(...)`, `$reduce(...)` | O(n) | Falls back to row accumulation |
+
+See [Query Planner](/explanation/query-planner) for the full optimization guide.
+
+---
+
+## `jsonata_each(expression, json_data)` — table-valued
+
+Evaluates an expression and expands the result into rows.
+
+```sql
+SELECT value, key FROM jsonata_each('items', '{"items":["a","b","c"]}');
+-- a  0
+-- b  1
+-- c  2
+
+SELECT j.value as tag, count(*) as n
+FROM events e, jsonata_each('tags', e.data) j
+GROUP BY tag ORDER BY n DESC;
+```
+
+| Column | Type | Description |
+|---|---|---|
+| `value` | any | Element value |
+| `key` | any | Array index (INTEGER) or object key (TEXT) |
+| `type` | TEXT | JSON type name |
+
+---
+
+## `jsonata_set(json, path, value)` — mutation
+
+Returns a modified copy with the value set at the dotted path. Creates intermediate objects.
+
+```sql
+SELECT jsonata_set('{"a":1}', 'b.c.d', '"deep"');
+-- {"a":1,"b":{"c":{"d":"deep"}}}
+```
+
+## `jsonata_delete(json, path)` — mutation
+
+Returns a modified copy with the key removed.
+
+```sql
+SELECT jsonata_delete('{"a":1,"b":2,"secret":"xxx"}', 'secret');
+-- {"a":1,"b":2}
+```
+
+---
+
+## Format functions
+
+Custom functions available inside any JSONata expression:
+
+| Function | Description | Example |
+|---|---|---|
+| `$base64(str)` | Base64 encode | `$base64("hello")` → `"aGVsbG8="` |
+| `$base64decode(str)` | Base64 decode | `$base64decode("aGVsbG8=")` → `"hello"` |
+| `$urlencode(str)` | URL percent-encode | `$urlencode("a b")` → `"a+b"` |
+| `$urldecode(str)` | URL percent-decode | `$urldecode("a+b")` → `"a b"` |
+| `$csv(array)` | CSV row | `$csv(["a","b,c"])` → `'a,"b,c"'` |
+| `$tsv(array)` | TSV row | `$tsv(["a","b"])` → `"a\tb"` |
+| `$htmlescape(str)` | HTML entity escape | `$htmlescape("<b>")` → `"&lt;b&gt;"` |
+
+---
+
+## Supported JSONata features
+
+Full JSONata 2.x specification (1,778 test cases). Includes: path expressions, wildcards, filter predicates, string/numeric/array/object/boolean/type functions, higher-order functions (`$map`, `$filter`, `$reduce`, `$single`), lambdas, closures, sorting, regex, date/time functions, and the chain operator (`~>`).
