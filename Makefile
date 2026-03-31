@@ -1,4 +1,4 @@
-.PHONY: all build test wasm extension editor playground website clean
+.PHONY: all build test wasm extension editor playground website clean publish
 
 # Build everything
 all: extension wasm editor
@@ -54,6 +54,11 @@ website-build:
 # Install all workspace dependencies
 install:
 	pnpm install
+
+# Build and publish npm packages
+publish: editor react
+	cd editor/codemirror && npm publish
+	cd react && npm publish
 
 # Clean build artifacts
 clean:

@@ -18,7 +18,6 @@ export const jsonataHighlighting = styleTags({
   CompareOp: t.compareOperator,
   ConcatOp: t.operator,
   RangeOp: t.operator,
-  PipeOp: t.operator,
   ChainOp: t.operator,
   ElvisOp: t.operator,
   CoalesceOp: t.operator,

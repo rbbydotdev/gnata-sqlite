@@ -65,7 +65,7 @@ BinaryExpr {
   expression !compare (CompareOp | kw<"in">) expression |
   expression !logicAnd kw<"and"> expression |
   expression !logicOr kw<"or"> expression |
-  expression !range (RangeOp | PipeOp | ElvisOp | CoalesceOp) expression
+  expression !range (RangeOp | ElvisOp | CoalesceOp) expression
 }
 
 ConditionalExpr {
@@ -167,7 +167,6 @@ kw<term> { @specialize[@name={term}]<Name, term> }
   ElvisOp { "?:" }
   CoalesceOp { "??" }
   ConcatOp { "&" }
-  PipeOp { "|" }
   CompareOp { "=" | "!=" | "<" | ">" | "<=" | ">=" }
 
   "." "," ";" ":" "(" ")" "[" "]" "{" "}" "?" "^" "@" "#"

@@ -48,5 +48,13 @@
     "typescript": "^5.0.0",
     "vitest": "^4.1.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rbbydotdev/gnata-sqlite",
+    "directory": "react"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
