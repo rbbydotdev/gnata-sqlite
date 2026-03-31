@@ -100,9 +100,16 @@ const reactHtml = await codeToHtml(reactCode, {
   defaultColor: false,
 });
 
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'gnata-sqlite',
+  description: 'End-to-end JSONata 2.x in Go — SQLite extension, WASM LSP, CodeMirror editor, composable React widget',
+};
+
 export default async function HomePage() {
   return (
-    <main>
+    <main style={{ overflowX: 'hidden' }}>
       {/* Hero */}
       <section className="relative flex flex-col items-center justify-center px-6 pt-24 pb-16 text-center">
         {/* Gradient glow behind hero title */}
