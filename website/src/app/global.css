@@ -466,8 +466,11 @@ html:has(body[data-scroll-locked]) {
   background: conic-gradient(
     from var(--shimmer-angle, 0deg),
     transparent 0%,
-    rgba(255,255,255,0.8) 10%,
-    #fff 12%,
+    #ff6b4a44 4%,
+    #ff9e64cc 7%,
+    #d0ff47cc 10%,
+    #fff74b 12%,
+    #ffffffee 14%,
     transparent 20%
   );
   animation: shimmer-spin 5s linear infinite;

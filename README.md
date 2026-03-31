@@ -17,6 +17,20 @@ Applications store JSON in SQLite. Querying and transforming that data requires 
 
 ## The Solution
 
+```sql
+.load ./gnata_jsonata sqlite3_jsonata_init
+
+-- Per-row: extract, transform, filter
+SELECT jsonata('items[price > 100].name', data) FROM orders;
+
+-- Aggregate: build a full report in one expression
+SELECT jsonata_query('{
+  "revenue":  $sum($filter($, function($v){ $v.status = "shipped" }).total),
+  "orders":   $count($),
+  "avg":      $round($average(total), 2)
+}', data) FROM orders;
+```
+
 gnata-sqlite makes SQLite JSON data queryable with [JSONata](https://jsonata.org) — a lightweight, expressive language end users can learn — and provides everything needed to embed an expression editor in any app:
 
 1. **Load the SQLite extension** → JSON columns become queryable with JSONata
@@ -31,19 +45,6 @@ A loadable extension that brings JSONata into SQL queries. Install once, use fro
 
 <img src="assets/playground-sqlite-dashboard.png" alt="SQLite dashboard query" width="720" />
 
-```sql
-.load ./gnata_jsonata sqlite3_jsonata_init
-
--- Per-row: extract, transform, filter
-SELECT jsonata('items[price > 100].name', data) FROM orders;
-
--- Aggregate: build a full report in one expression
-SELECT jsonata_query('{
-  "revenue":  $sum($filter($, function($v){ $v.status = "shipped" }).total),
-  "orders":   $count($),
-  "avg":      $round($average(total), 2)
-}', data) FROM orders;
-```
 
 The query planner decomposes complex expressions into streaming accumulators — matching hand-tuned SQL performance on 100K+ rows. See [sqlite/OPTIMIZATION.md](sqlite/OPTIMIZATION.md).
 
@@ -116,7 +117,7 @@ Backend                          Frontend
 │ SQLite + gnata   │            │ @gnata-sqlite/react      │
 │ extension        │  schema →  │ CodeMirror 6 editor      │
 │                  │            │ + 85KB WASM LSP          │
-│ Runs expressions │  ← expr   │ Autocomplete, hover,     │
+│ Runs expressions │  ← expr    │ Autocomplete, hover,     │
 │ against JSON data│            │ diagnostics              │
 └──────────────────┘            └──────────────────────────┘
 ```
