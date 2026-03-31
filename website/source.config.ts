@@ -1,6 +1,7 @@
 import { defineConfig, defineDocs } from 'fumadocs-mdx/config';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
 import { tokyoNightLight } from './src/lib/tokyo-night-light';
+import { tokyoNightDark } from './src/lib/tokyo-night-dark';
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -22,7 +23,7 @@ export default defineConfig({
     rehypeCodeOptions: {
       themes: {
         light: tokyoNightLight,
-        dark: 'tokyo-night',
+        dark: tokyoNightDark,
       },
     },
   },

@@ -77,6 +77,8 @@ jobs:
           cp -r website/out/* _site/
           mkdir -p _site/playground
           cp -r playground/dist/* _site/playground/
+          # SPA fallback — serve index.html for all playground routes
+          cp _site/playground/index.html _site/playground/404.html
 
       - uses: actions/upload-pages-artifact@v3
 

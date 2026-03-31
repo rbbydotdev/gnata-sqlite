@@ -54,9 +54,9 @@ export function SqliteMode() {
     (async () => {
       try {
         const [wasmExecText, wasmBytes] = await Promise.all([
-          fetch('/wasm_exec.js').then((r) => r.text()),
+          fetch(`${import.meta.env.BASE_URL}wasm_exec.js`).then((r) => r.text()),
           (async () => {
-            const resp = await fetch('/gnata.wasm');
+            const resp = await fetch(`${import.meta.env.BASE_URL}gnata.wasm`);
             const total = parseInt(resp.headers.get('content-length') || '0', 10);
             let loaded = 0;
             const chunks: Uint8Array[] = [];

@@ -86,16 +86,17 @@ function App() {
 }`;
 
 import { tokyoNightLight } from '@/lib/tokyo-night-light';
+import { tokyoNightDark } from '@/lib/tokyo-night-dark';
 
 const sqlHtml = await codeToHtml(sqlCode, {
   lang: 'sql',
-  themes: { dark: 'tokyo-night', light: tokyoNightLight },
+  themes: { dark: tokyoNightDark, light: tokyoNightLight },
   defaultColor: false,
 });
 
 const reactHtml = await codeToHtml(reactCode, {
   lang: 'tsx',
-  themes: { dark: 'tokyo-night', light: tokyoNightLight },
+  themes: { dark: tokyoNightDark, light: tokyoNightLight },
   defaultColor: false,
 });
 

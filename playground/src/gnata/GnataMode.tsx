@@ -12,11 +12,13 @@ import { useLayoutContext } from '../RootLayout';
 
 const EXAMPLE_KEYS = Object.keys(GNATA_EXAMPLES);
 
+const base = import.meta.env.BASE_URL;
+
 const WASM_OPTIONS = {
-  evalWasmUrl: '/gnata.wasm',
-  evalExecUrl: '/wasm_exec.js',
-  lspWasmUrl: '/gnata-lsp.wasm',
-  lspExecUrl: '/lsp-wasm_exec.js',
+  evalWasmUrl: `${base}gnata.wasm`,
+  evalExecUrl: `${base}wasm_exec.js`,
+  lspWasmUrl: `${base}gnata-lsp.wasm`,
+  lspExecUrl: `${base}lsp-wasm_exec.js`,
 };
 
 const DEFAULT_EXPR = '$sum(Account.Order.Product.(Price * Quantity))';
