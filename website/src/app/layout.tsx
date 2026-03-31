@@ -1,6 +1,11 @@
 import { Onest } from 'next/font/google';
 import { Provider } from '@/components/provider';
+import type { Metadata } from 'next';
 import './global.css';
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://rbby.dev'),
+};
 
 const onest = Onest({
   subsets: ['latin'],
