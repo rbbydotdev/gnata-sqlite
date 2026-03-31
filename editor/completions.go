@@ -30,7 +30,7 @@ func completions(expr string, cursorPos int, schemaJSON string) string {
 		marshalFieldCompletions(&b, schema, ctx.path, ctx.prefix)
 	case ctxTopLevel:
 		marshalTopLevelCompletions(&b, schema, ctx.prefix)
-	default:
+	case ctxEmpty:
 		b.WriteString("[]")
 	}
 	return b.String()
@@ -65,13 +65,22 @@ func lexTokens(src string) []lexer.Token {
 		tokens = append(tokens, tok)
 
 		// Track infix state like the parser does.
+		//exhaustive:enforce
 		switch tok.Type {
 		case lexer.TokenName, lexer.TokenVariable, lexer.TokenString,
 			lexer.TokenNumber, lexer.TokenValue, lexer.TokenRegex,
 			lexer.TokenRBracket, lexer.TokenRParen, lexer.TokenRBrace,
 			lexer.TokenStar, lexer.TokenStarStar, lexer.TokenPercent:
 			infix = true
-		default:
+		case lexer.TokenEOF, lexer.TokenDot, lexer.TokenLBracket, lexer.TokenLBrace,
+			lexer.TokenLParen, lexer.TokenComma, lexer.TokenAt, lexer.TokenHash,
+			lexer.TokenSemicolon, lexer.TokenColon, lexer.TokenQuestion,
+			lexer.TokenPlus, lexer.TokenMinus, lexer.TokenSlash, lexer.TokenPipe,
+			lexer.TokenEquals, lexer.TokenLT, lexer.TokenGT, lexer.TokenCaret,
+			lexer.TokenAmp, lexer.TokenBang, lexer.TokenTilde, lexer.TokenDotDot,
+			lexer.TokenAssign, lexer.TokenNE, lexer.TokenLE, lexer.TokenGE,
+			lexer.TokenChain, lexer.TokenElvis, lexer.TokenCoalesce,
+			lexer.TokenAnd, lexer.TokenOr, lexer.TokenIn:
 			infix = false
 		}
 	}

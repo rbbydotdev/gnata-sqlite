@@ -169,7 +169,7 @@ func resolveFieldDoc(schema *schemaNode, path []string) string {
 	}
 
 	// Show child fields if it's an object
-	if node.Fields != nil && len(node.Fields) > 0 {
+	if len(node.Fields) > 0 {
 		b.WriteString("\n\nFields: ")
 		first := true
 		for name := range node.Fields {

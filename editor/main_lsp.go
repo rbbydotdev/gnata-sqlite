@@ -82,10 +82,6 @@ func isRequest(msg *jsonrpcMessage) bool {
 	return msg.ID != nil && msg.Method != ""
 }
 
-func isNotification(msg *jsonrpcMessage) bool {
-	return msg.ID == nil && msg.Method != ""
-}
-
 // --- Transport: LSP base protocol (Content-Length headers over stdio) ---
 
 func readMessage(r *bufio.Reader) (*jsonrpcMessage, error) {
@@ -99,8 +95,8 @@ func readMessage(r *bufio.Reader) (*jsonrpcMessage, error) {
 		if line == "" {
 			break // end of headers
 		}
-		if strings.HasPrefix(line, "Content-Length: ") {
-			n, err := strconv.Atoi(strings.TrimPrefix(line, "Content-Length: "))
+		if val, ok := strings.CutPrefix(line, "Content-Length: "); ok {
+			n, err := strconv.Atoi(val)
 			if err != nil {
 				return nil, fmt.Errorf("bad Content-Length: %w", err)
 			}
@@ -195,7 +191,7 @@ func handleInitialize(msg *jsonrpcMessage) {
 		} `json:"initializationOptions"`
 	}
 	if msg.Params != nil {
-		json.Unmarshal(msg.Params, &params)
+		_ = json.Unmarshal(msg.Params, &params)
 	}
 	if params.InitializationOptions.Schema != "" {
 		schema = params.InitializationOptions.Schema
@@ -301,7 +297,7 @@ func handleCompletion(msg *jsonrpcMessage) {
 
 	// Parse the JSON array from our engine into LSP CompletionItem format.
 	var items []map[string]any
-	json.Unmarshal([]byte(resultJSON), &items)
+	_ = json.Unmarshal([]byte(resultJSON), &items)
 
 	var lspItems []map[string]any
 	for _, item := range items {
@@ -394,7 +390,7 @@ func publishDiagnostics(uri, text string) {
 		Severity string `json:"severity"`
 		Message  string `json:"message"`
 	}
-	json.Unmarshal([]byte(resultJSON), &items)
+	_ = json.Unmarshal([]byte(resultJSON), &items)
 
 	var lspDiags []map[string]any
 	for _, item := range items {

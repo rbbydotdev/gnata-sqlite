@@ -126,7 +126,10 @@ func buildJSONObject(args []*C.sqlite3_value, count int) string {
 		}
 		// Key — always a string.
 		key := C.GoString(C.go_value_text(args[i]))
-		keyJSON, _ := json.Marshal(key)
+		keyJSON, err := json.Marshal(key)
+		if err != nil {
+			continue
+		}
 		buf.Write(keyJSON)
 		buf.WriteByte(':')
 		// Value — type-aware.
@@ -151,7 +154,11 @@ func writeSQLiteValueAsJSON(buf *strings.Builder, val *C.sqlite3_value) {
 		if C.go_value_subtype(val) == 74 || looksLikeJSON(s) {
 			buf.WriteString(s)
 		} else {
-			quoted, _ := json.Marshal(s)
+			quoted, err := json.Marshal(s)
+			if err != nil {
+				buf.WriteString("null")
+				return
+			}
 			buf.Write(quoted)
 		}
 	default:

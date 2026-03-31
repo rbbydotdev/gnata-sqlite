@@ -155,7 +155,10 @@ func fmtToString(v any) (string, bool) {
 	case nil:
 		return "", false
 	case []any, map[string]any:
-		b, _ := json.Marshal(val)
+		b, err := json.Marshal(val)
+		if err != nil {
+			return "", false
+		}
 		return string(b), true
 	}
 	return fmt.Sprintf("%v", v), true

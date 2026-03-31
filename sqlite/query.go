@@ -6,6 +6,7 @@ package main
 import "C"
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -86,7 +87,7 @@ func goJsonataQueryStep(ctx *C.sqlite3_context, argc C.int, argv **C.sqlite3_val
 		st.exprStr = C.GoString(C.go_value_text(args[0]))
 		compiled, err := getCachedExpr(st.exprStr)
 		if err != nil {
-			st.err = fmt.Errorf("jsonata_query compile: %v", err)
+			st.err = fmt.Errorf("jsonata_query compile: %w", err)
 			return
 		}
 		st.expr = compiled
@@ -115,7 +116,7 @@ func goJsonataQueryStep(ctx *C.sqlite3_context, argc C.int, argv **C.sqlite3_val
 		parsed, err := gnata.DecodeJSON(json.RawMessage(jsonData))
 		if err != nil {
 			if st.err == nil {
-				st.err = fmt.Errorf("jsonata_query: invalid JSON: %v", err)
+				st.err = fmt.Errorf("jsonata_query: invalid JSON: %w", err)
 			}
 			return
 		}
@@ -162,7 +163,7 @@ func goJsonataQueryFinal(ctx *C.sqlite3_context) {
 			return
 		}
 		var err error
-		result, err = st.expr.EvalWithCustomFuncs(nil, st.rows, formatEnv)
+		result, err = st.expr.EvalWithCustomFuncs(context.TODO(), st.rows, formatEnv)
 		if err != nil {
 			setError(ctx, fmt.Sprintf("jsonata_query eval: %v", err))
 			return
