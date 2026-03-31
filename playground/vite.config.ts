@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.GITHUB_PAGES ? '/gnata-sqlite/playground/' : '/',
   plugins: [react()],
   optimizeDeps: {
     exclude: ['@gnata-sqlite/react'],

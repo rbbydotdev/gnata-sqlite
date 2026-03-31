@@ -186,6 +186,22 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
       }
     }
 
+    function makeLspFns() {
+      const gnataDiagnostics = (doc: string): string => {
+        const r = window._gnataDiagnostics(doc);
+        if (r instanceof Error) throw r;
+        return r;
+      };
+      const gnataCompletions = (doc: string, pos: number, schema: string): string => {
+        const r = window._gnataCompletions(doc, pos, schema);
+        if (r instanceof Error) throw r;
+        return r;
+      };
+      const gnataHover = (doc: string, pos: number, schema: string): string | null =>
+        window._gnataHover(doc, pos, schema);
+      return { gnataDiagnostics, gnataCompletions, gnataHover };
+    }
+
     async function loadLsp() {
       if (!options.lspWasmUrl || !options.lspExecUrl) return;
 
@@ -193,19 +209,7 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
         // Check if LSP WASM is already loaded (StrictMode remount or HMR)
         if (typeof window._gnataDiagnostics === 'function') {
           if (cancelled) return;
-          const gnataDiagnostics = (doc: string): string => {
-            const r = window._gnataDiagnostics(doc);
-            if (r instanceof Error) throw r;
-            return r;
-          };
-          const gnataCompletions = (doc: string, pos: number, schema: string): string => {
-            const r = window._gnataCompletions(doc, pos, schema);
-            if (r instanceof Error) throw r;
-            return r;
-          };
-          const gnataHover = (doc: string, pos: number, schema: string): string | null =>
-            window._gnataHover(doc, pos, schema);
-          setState(prev => ({ ...prev, isLspReady: true, gnataDiagnostics, gnataCompletions, gnataHover }));
+          setState(prev => ({ ...prev, isLspReady: true, ...makeLspFns() }));
           return;
         }
 
@@ -214,19 +218,7 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
           const ready = await waitForGlobal('_gnataDiagnostics');
           if (cancelled) return;
           if (ready) {
-            const gnataDiagnostics = (doc: string): string => {
-              const r = window._gnataDiagnostics(doc);
-              if (r instanceof Error) throw r;
-              return r;
-            };
-            const gnataCompletions = (doc: string, pos: number, schema: string): string => {
-              const r = window._gnataCompletions(doc, pos, schema);
-              if (r instanceof Error) throw r;
-              return r;
-            };
-            const gnataHover = (doc: string, pos: number, schema: string): string | null =>
-              window._gnataHover(doc, pos, schema);
-            setState(prev => ({ ...prev, isLspReady: true, gnataDiagnostics, gnataCompletions, gnataHover }));
+            setState(prev => ({ ...prev, isLspReady: true, ...makeLspFns() }));
             return;
           }
         }
@@ -247,26 +239,7 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
 
         if (cancelled) return;
 
-        const gnataDiagnostics = (doc: string): string => {
-          const r = window._gnataDiagnostics(doc);
-          if (r instanceof Error) throw r;
-          return r;
-        };
-        const gnataCompletions = (doc: string, pos: number, schema: string): string => {
-          const r = window._gnataCompletions(doc, pos, schema);
-          if (r instanceof Error) throw r;
-          return r;
-        };
-        const gnataHover = (doc: string, pos: number, schema: string): string | null =>
-          window._gnataHover(doc, pos, schema);
-
-        setState(prev => ({
-          ...prev,
-          isLspReady: true,
-          gnataDiagnostics,
-          gnataCompletions,
-          gnataHover,
-        }));
+        setState(prev => ({ ...prev, isLspReady: true, ...makeLspFns() }));
       } catch (err) {
         console.warn('LSP WASM not available:', err instanceof Error ? err.message : err);
       }

@@ -83,41 +83,33 @@ function useJsonataWasm(options) {
         }));
       }
     }
+    function makeLspFns() {
+      const gnataDiagnostics = (doc) => {
+        const r = window._gnataDiagnostics(doc);
+        if (r instanceof Error) throw r;
+        return r;
+      };
+      const gnataCompletions = (doc, pos, schema) => {
+        const r = window._gnataCompletions(doc, pos, schema);
+        if (r instanceof Error) throw r;
+        return r;
+      };
+      const gnataHover = (doc, pos, schema) => window._gnataHover(doc, pos, schema);
+      return { gnataDiagnostics, gnataCompletions, gnataHover };
+    }
     async function loadLsp() {
       if (!options.lspWasmUrl || !options.lspExecUrl) return;
       try {
         if (typeof window._gnataDiagnostics === "function") {
           if (cancelled) return;
-          const gnataDiagnostics2 = (doc) => {
-            const r = window._gnataDiagnostics(doc);
-            if (r instanceof Error) throw r;
-            return r;
-          };
-          const gnataCompletions2 = (doc, pos, schema) => {
-            const r = window._gnataCompletions(doc, pos, schema);
-            if (r instanceof Error) throw r;
-            return r;
-          };
-          const gnataHover2 = (doc, pos, schema) => window._gnataHover(doc, pos, schema);
-          setState((prev) => ({ ...prev, isLspReady: true, gnataDiagnostics: gnataDiagnostics2, gnataCompletions: gnataCompletions2, gnataHover: gnataHover2 }));
+          setState((prev) => ({ ...prev, isLspReady: true, ...makeLspFns() }));
           return;
         }
         if (document.querySelector(`script[src="${options.lspExecUrl}"]`)) {
           const ready = await waitForGlobal("_gnataDiagnostics");
           if (cancelled) return;
           if (ready) {
-            const gnataDiagnostics2 = (doc) => {
-              const r = window._gnataDiagnostics(doc);
-              if (r instanceof Error) throw r;
-              return r;
-            };
-            const gnataCompletions2 = (doc, pos, schema) => {
-              const r = window._gnataCompletions(doc, pos, schema);
-              if (r instanceof Error) throw r;
-              return r;
-            };
-            const gnataHover2 = (doc, pos, schema) => window._gnataHover(doc, pos, schema);
-            setState((prev) => ({ ...prev, isLspReady: true, gnataDiagnostics: gnataDiagnostics2, gnataCompletions: gnataCompletions2, gnataHover: gnataHover2 }));
+            setState((prev) => ({ ...prev, isLspReady: true, ...makeLspFns() }));
             return;
           }
         }
@@ -130,24 +122,7 @@ function useJsonataWasm(options) {
         const lspResult = await WebAssembly.instantiateStreaming(lspResp, lspGo.importObject);
         lspGo.run(lspResult.instance);
         if (cancelled) return;
-        const gnataDiagnostics = (doc) => {
-          const r = window._gnataDiagnostics(doc);
-          if (r instanceof Error) throw r;
-          return r;
-        };
-        const gnataCompletions = (doc, pos, schema) => {
-          const r = window._gnataCompletions(doc, pos, schema);
-          if (r instanceof Error) throw r;
-          return r;
-        };
-        const gnataHover = (doc, pos, schema) => window._gnataHover(doc, pos, schema);
-        setState((prev) => ({
-          ...prev,
-          isLspReady: true,
-          gnataDiagnostics,
-          gnataCompletions,
-          gnataHover
-        }));
+        setState((prev) => ({ ...prev, isLspReady: true, ...makeLspFns() }));
       } catch (err) {
         console.warn("LSP WASM not available:", err instanceof Error ? err.message : err);
       }
@@ -621,7 +596,6 @@ function tokyoNightTheme(mode, overrides) {
 function useJsonataEditor(options) {
   const viewRef = useRef2(null);
   const themeCompRef = useRef2(new Compartment());
-  const lspCompRef = useRef2(new Compartment());
   const onChangeRef = useRef2(options.onChange);
   onChangeRef.current = options.onChange;
   const onRunRef = useRef2(options.onRun);
@@ -846,11 +820,16 @@ var JsonataEditor = React.memo(function JsonataEditor2(props) {
   const stableGetInputJson = useCallback3(() => {
     return getInputJsonRef.current ? getInputJsonRef.current() : "null";
   }, []);
-  const editorOptions = {
+  const internalChangeRef = useRef3(false);
+  const handleChange = useCallback3((value) => {
+    internalChangeRef.current = true;
+    props.onChange?.(value);
+  }, [props.onChange]);
+  const { setValue } = useJsonataEditor({
     containerRef,
     initialDoc: props.value ?? "",
     placeholder: props.placeholder ?? "e.g. Account.Order.Product.(Price * Quantity)",
-    onChange: props.onChange,
+    onChange: handleChange,
     onRun: props.onRun,
     theme: props.theme ?? "dark",
     themeOverrides: props.themeOverrides,
@@ -861,17 +840,7 @@ var JsonataEditor = React.memo(function JsonataEditor2(props) {
     gnataHover: props.gnataHover,
     getInputJson: stableGetInputJson,
     schema: props.schema
-  };
-  const internalChangeRef = useRef3(false);
-  const handleChange = useCallback3((value) => {
-    internalChangeRef.current = true;
-    props.onChange?.(value);
-  }, [props.onChange]);
-  const editorOptionsWithTrackedChange = {
-    ...editorOptions,
-    onChange: handleChange
-  };
-  const { setValue } = useJsonataEditor(editorOptionsWithTrackedChange);
+  });
   const prevValueRef = useRef3(props.value);
   useEffect4(() => {
     if (props.value !== void 0 && props.value !== prevValueRef.current) {
@@ -1070,23 +1039,13 @@ var JsonataResult = React3.memo(function JsonataResult2(props) {
       "div",
       {
         ref: editorWrapRef,
-        style: {
-          flex: 1,
-          overflow: "hidden"
-          // Apply content color via CSS custom property on the wrapper
-          // The CM content inherits color from .cm-editor .cm-content
-        }
+        className: hasError ? "gnata-result-error" : "gnata-result-success",
+        style: { flex: 1, overflow: "hidden" }
       }
     ),
     /* @__PURE__ */ jsx3("style", { children: `
-        .gnata-result-${hasError ? "error" : "success"} .cm-editor .cm-content {
-          color: ${contentColor} !important;
-        }
-      ` }),
-    /* @__PURE__ */ jsx3("style", { children: `
-        [data-gnata-result-id="${containerRef.current?.dataset?.gnataResultId ?? "x"}"] .cm-editor .cm-content {
-          color: ${contentColor} !important;
-        }
+        .gnata-result-error .cm-editor .cm-content { color: ${contentColor} !important; }
+        .gnata-result-success .cm-editor .cm-content { color: ${contentColor} !important; }
       ` })
   ] });
 });

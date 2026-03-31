@@ -5,7 +5,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { autocompletion, type CompletionContext } from '@codemirror/autocomplete';
 import { linter } from '@codemirror/lint';
 import { jsonataStreamLanguage } from '../utils/tokenizer';
-import { buildSchema, allKeysFromJson, formatHoverMarkdown, type Schema } from '../utils/schema';
+import { allKeysFromJson, formatHoverMarkdown, type Schema } from '../utils/schema';
 import { tokyoNightTheme } from '../theme/tokyo-night';
 import type { CMTokenColors } from '../theme/colors';
 
@@ -65,7 +65,6 @@ export interface UseJsonataEditorReturn {
 export function useJsonataEditor(options: UseJsonataEditorOptions): UseJsonataEditorReturn {
   const viewRef = useRef<EditorView | null>(null);
   const themeCompRef = useRef(new Compartment());
-  const lspCompRef = useRef(new Compartment());
 
   // Stable refs for callbacks that change frequently
   const onChangeRef = useRef(options.onChange);

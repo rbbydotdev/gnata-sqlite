@@ -131,24 +131,12 @@ export const JsonataResult = React.memo(function JsonataResult(props: JsonataRes
       )}
       <div
         ref={editorWrapRef}
-        style={{
-          flex: 1,
-          overflow: 'hidden',
-          // Apply content color via CSS custom property on the wrapper
-          // The CM content inherits color from .cm-editor .cm-content
-        }}
+        className={hasError ? 'gnata-result-error' : 'gnata-result-success'}
+        style={{ flex: 1, overflow: 'hidden' }}
       />
-      {/* Inject a style tag to color the content text */}
       <style>{`
-        .gnata-result-${hasError ? 'error' : 'success'} .cm-editor .cm-content {
-          color: ${contentColor} !important;
-        }
-      `}</style>
-      {/* Apply class for content coloring. Uses ref to style the editor wrapper. */}
-      <style>{`
-        [data-gnata-result-id="${containerRef.current?.dataset?.gnataResultId ?? 'x'}"] .cm-editor .cm-content {
-          color: ${contentColor} !important;
-        }
+        .gnata-result-error .cm-editor .cm-content { color: ${contentColor} !important; }
+        .gnata-result-success .cm-editor .cm-content { color: ${contentColor} !important; }
       `}</style>
     </div>
   );

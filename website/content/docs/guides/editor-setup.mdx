@@ -1,13 +1,11 @@
 ---
 title: Editor Setup
-description: Set up JSONata language support in VS Code, Neovim, or any CodeMirror 6 editor
+description: Set up JSONata language support with CodeMirror 6
 ---
 
 # Editor Setup
 
-## CodeMirror 6 (Browser)
-
-### Syntax highlighting only
+## Syntax highlighting only
 
 ```bash
 npm install @gnata-sqlite/codemirror
@@ -23,7 +21,7 @@ new EditorView({
 })
 ```
 
-### Full support (diagnostics + autocomplete + hover)
+## Full support (diagnostics + autocomplete + hover)
 
 Requires WASM files — build or download from a release.
 
@@ -39,48 +37,23 @@ new EditorView({
 })
 ```
 
-### Build the WASM files
+## Build the WASM files
 
 ```bash
 make wasm
 ```
 
----
+## Tooltip styling
 
-## VS Code
+CodeMirror tooltips (hover docs, autocomplete, diagnostics) render as portals outside the editor DOM. They need global CSS to be styled.
 
-Build the native LSP server:
+A Tokyo Night stylesheet is included as a starting point:
 
-```bash
-go build -o gnata-lsp ./editor/
+```tsx
+import '@gnata-sqlite/react/tooltips.css';
 ```
 
-Add to `settings.json`:
-
-```json
-{
-  "jsonata.lsp.serverPath": "/path/to/gnata-lsp"
-}
-```
-
----
-
-## Neovim
-
-Build the native LSP server (same as above), then configure:
-
-```lua
-require("lspconfig.configs").jsonata = {
-  default_config = {
-    cmd = { "/path/to/gnata-lsp" },
-    filetypes = { "jsonata" },
-    root_dir = function() return vim.loop.cwd() end,
-  },
-}
-require("lspconfig").jsonata.setup({})
-```
-
----
+This covers dark and light mode using the Tokyo Night palette. For custom themes, copy `tooltips.css` from the package and adjust the colors to match your design system. The key selectors are `.cm-tooltip-hover`, `.cm-hover-tooltip`, `.cm-tooltip-autocomplete`, and `.cm-lintRange-error`.
 
 ## Schema for autocomplete
 
@@ -100,5 +73,4 @@ Without a schema, autocomplete only suggests built-in functions. Pass a schema t
 }
 ```
 
-- **CodeMirror:** `schema` option in `jsonataFull()`
-- **LSP:** `initializationOptions.schema` as a JSON string
+Pass via `schema` option in `jsonataFull()`.

@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import type { Extension } from '@codemirror/state';
-import { useJsonataEditor, type UseJsonataEditorOptions } from '../hooks/use-jsonata-editor';
+import { useJsonataEditor } from '../hooks/use-jsonata-editor';
 import type { CMTokenColors } from '../theme/colors';
 import type { Schema } from '../utils/schema';
 
@@ -61,11 +61,19 @@ export const JsonataEditor = React.memo(function JsonataEditor(props: JsonataEdi
     return getInputJsonRef.current ? getInputJsonRef.current() : 'null';
   }, []);
 
-  const editorOptions: UseJsonataEditorOptions = {
+  // Track whether changes originated from user typing (internal) vs external prop changes
+  const internalChangeRef = useRef(false);
+
+  const handleChange = useCallback((value: string) => {
+    internalChangeRef.current = true;
+    props.onChange?.(value);
+  }, [props.onChange]);
+
+  const { setValue } = useJsonataEditor({
     containerRef,
     initialDoc: props.value ?? '',
     placeholder: props.placeholder ?? 'e.g. Account.Order.Product.(Price * Quantity)',
-    onChange: props.onChange,
+    onChange: handleChange,
     onRun: props.onRun,
     theme: props.theme ?? 'dark',
     themeOverrides: props.themeOverrides,
@@ -76,22 +84,7 @@ export const JsonataEditor = React.memo(function JsonataEditor(props: JsonataEdi
     gnataHover: props.gnataHover,
     getInputJson: stableGetInputJson,
     schema: props.schema,
-  };
-
-  // Track whether changes originated from user typing (internal) vs external prop changes
-  const internalChangeRef = useRef(false);
-
-  const handleChange = useCallback((value: string) => {
-    internalChangeRef.current = true;
-    props.onChange?.(value);
-  }, [props.onChange]);
-
-  const editorOptionsWithTrackedChange = {
-    ...editorOptions,
-    onChange: handleChange,
-  };
-
-  const { setValue } = useJsonataEditor(editorOptionsWithTrackedChange);
+  });
 
   // Sync external value prop into editor — only when the change came from outside
   // (not from the editor's own typing, which would reset the cursor)

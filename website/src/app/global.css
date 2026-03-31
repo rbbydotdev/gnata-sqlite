@@ -132,6 +132,14 @@ html:has(body[data-scroll-locked]) {
   padding: 0.15em 0.35em;
   font-size: 0.875em;
 }
+:root:not(.dark) .prose :not(pre) > code {
+  color: #587539;
+  background-color: #f0f1f5;
+  border: 1px solid #c4c8da;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+  font-size: 0.875em;
+}
 
 /*
  * Blockquotes — accent left border
@@ -166,6 +174,25 @@ html:has(body[data-scroll-locked]) {
 
 .dark .prose tr:hover td {
   background-color: rgba(122, 162, 247, 0.04);
+}
+
+:root:not(.dark) .prose table {
+  border-collapse: collapse;
+}
+:root:not(.dark) .prose th {
+  background-color: #f0f1f5;
+  color: #343b58;
+  border: 1px solid #c4c8da;
+  padding: 0.5em 0.75em;
+  font-weight: 600;
+}
+:root:not(.dark) .prose td {
+  border: 1px solid #c4c8da;
+  padding: 0.5em 0.75em;
+  color: #3760bf;
+}
+:root:not(.dark) .prose tr:hover td {
+  background-color: rgba(46, 125, 233, 0.04);
 }
 
 /*
@@ -428,7 +455,7 @@ html:has(body[data-scroll-locked]) {
   background: #9ece6a;
 }
 :root:not(.dark) .shimmer-btn {
-  background: #7ba34e;
+  background: #9ece6a;
 }
 .shimmer-btn::before {
   content: '';
@@ -454,7 +481,7 @@ html:has(body[data-scroll-locked]) {
   background: #9ece6a;
 }
 :root:not(.dark) .shimmer-btn::after {
-  background: #7ba34e;
+  background: #9ece6a;
 }
 @keyframes shimmer-spin {
   to { --shimmer-angle: 360deg; }
@@ -476,3 +503,141 @@ html.dark .shiki span {
   font-style: var(--shiki-dark-font-style) !important;
   font-weight: var(--shiki-dark-font-weight) !important;
 }
+
+/*
+ * CodeMirror tooltip styling for RunExample widget
+ * Tooltips render as portals outside the editor, so they need global CSS
+ */
+.dark .cm-tooltip-hover {
+  background: #1f2335 !important;
+  border: 1px solid #3b4261 !important;
+  border-radius: 6px;
+  max-width: 480px;
+}
+.dark .cm-hover-tooltip {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #a9b1d6;
+  line-height: 1.5;
+}
+.dark .cm-hover-tooltip strong {
+  color: #7aa2f7;
+  font-weight: 700;
+}
+.dark .cm-hover-tooltip code {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #1a1b26;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #9ece6a;
+}
+.dark .cm-hover-tooltip pre {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #1a1b26;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin: 6px 0;
+  color: #a9b1d6;
+  overflow-x: auto;
+}
+.dark .cm-hover-tooltip pre code {
+  background: none;
+  padding: 0;
+}
+.dark .cm-tooltip-autocomplete {
+  background: #1f2335 !important;
+  border: 1px solid #3b4261 !important;
+  border-radius: 6px;
+}
+.dark .cm-tooltip-autocomplete ul li {
+  color: #a9b1d6;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+.dark .cm-tooltip-autocomplete ul li[aria-selected] {
+  background: rgba(122,162,247,0.12) !important;
+  color: #7aa2f7 !important;
+}
+.dark .cm-tooltip-autocomplete .cm-completionDetail {
+  color: #565f89;
+  font-style: normal;
+  margin-left: 8px;
+}
+.dark .cm-lintRange-error {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='m0 3 l2 -2 l1 0 l2 2 l1 0' fill='none' stroke='%23f7768e' stroke-width='.7'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: bottom;
+  background-size: 6px 3px;
+}
+
+/* Light mode tooltips */
+:root:not(.dark) .cm-tooltip-hover {
+  background: #e8e9ed !important;
+  border: 1px solid #b6bfe2 !important;
+  border-radius: 6px;
+  max-width: 480px;
+}
+:root:not(.dark) .cm-hover-tooltip {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #3760bf;
+  line-height: 1.5;
+}
+:root:not(.dark) .cm-hover-tooltip strong {
+  color: #2e7de9;
+  font-weight: 700;
+}
+:root:not(.dark) .cm-hover-tooltip code {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #e1e2e7;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #587539;
+}
+:root:not(.dark) .cm-hover-tooltip pre {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #e1e2e7;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin: 6px 0;
+  color: #3760bf;
+  overflow-x: auto;
+}
+:root:not(.dark) .cm-hover-tooltip pre code {
+  background: none;
+  padding: 0;
+}
+:root:not(.dark) .cm-tooltip-autocomplete {
+  background: #e8e9ed !important;
+  border: 1px solid #b6bfe2 !important;
+  border-radius: 6px;
+}
+:root:not(.dark) .cm-tooltip-autocomplete ul li {
+  color: #3760bf;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+:root:not(.dark) .cm-tooltip-autocomplete ul li[aria-selected] {
+  background: rgba(46,125,233,0.10) !important;
+  color: #2e7de9 !important;
+}
+:root:not(.dark) .cm-tooltip-autocomplete .cm-completionDetail {
+  color: #848cb5;
+  font-style: normal;
+  margin-left: 8px;
+}
+:root:not(.dark) .cm-lintRange-error {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='m0 3 l2 -2 l1 0 l2 2 l1 0' fill='none' stroke='%23c64343' stroke-width='.7'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: bottom;
+  background-size: 6px 3px;
+}
+
+.landing-btn-text { color: #1a1b26; }
+:root:not(.dark) .landing-btn-text { color: #ffffff; }

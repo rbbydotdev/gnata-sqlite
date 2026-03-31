@@ -129,8 +129,7 @@ export default async function HomePage() {
         <div className="relative mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/docs"
-            className="shimmer-btn inline-flex items-center gap-2 px-8 py-3 text-sm font-semibold"
-            style={{ color: '#1a1b26' }}
+            className="shimmer-btn inline-flex items-center gap-2 px-8 py-3 text-sm font-semibold landing-btn-text"
           >
             Learn More
           </Link>
@@ -197,9 +196,15 @@ export default async function HomePage() {
 
       {/* Screenshots gallery */}
       <section className="mx-auto max-w-5xl px-6 py-16">
-        <h2 className="mb-4 text-center text-2xl font-bold landing-text-strong">
+        <a
+          href="https://rbby.dev/gnata-sqlite/playground"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-4 flex items-center justify-center gap-2 text-2xl font-bold landing-text-strong transition-opacity hover:opacity-80"
+        >
           Playground
-        </h2>
+          <ExternalLink className="size-5" />
+        </a>
         <p className="mb-8 text-center text-sm landing-text-muted">
           The interactive playground running the SQLite extension, WASM LSP, and CodeMirror editor together
         </p>

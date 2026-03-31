@@ -219,20 +219,6 @@ export function SqliteMode() {
     setSqlRef.current(q.sql);
   }, []);
 
-  // Keyboard shortcut
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        // Only handle if sqlite mode is visible — parent manages this
-      }
-      if (e.key === 'Escape') {
-        // Close row detail handled by ResultsTable
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, []);
-
   // Resizable divider
   useEffect(() => {
     const divider = dividerRef.current;

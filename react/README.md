@@ -5,23 +5,19 @@ Composable React components and hooks for building JSONata editors with syntax h
 ## Quick Start
 
 ```tsx
-import { JsonataPlayground, useJsonataWasm } from '@gnata-sqlite/react'
+import { JsonataPlayground } from '@gnata-sqlite/react'
 
 function App() {
-  const wasm = useJsonataWasm({
-    evalWasmUrl: '/gnata.wasm',
-    evalExecUrl: '/wasm_exec.js',
-    lspWasmUrl: '/gnata-lsp.wasm',
-    lspExecUrl: '/lsp-wasm_exec.js',
-  })
-
-  if (!wasm.isReady) return <div>Loading...</div>
-
   return (
     <JsonataPlayground
       defaultExpression="$sum(Account.Order.Product.(Price * Quantity))"
       defaultInput={sampleJson}
-      wasm={wasm}
+      wasmOptions={{
+        evalWasmUrl: '/gnata.wasm',
+        evalExecUrl: '/wasm_exec.js',
+        lspWasmUrl: '/gnata-lsp.wasm',
+        lspExecUrl: '/lsp-wasm_exec.js',
+      }}
       theme="dark"
       height={500}
     />
@@ -58,12 +54,12 @@ The package is **hooks-first** — every feature is a hook. Components compose h
 
 ### `useJsonataWasm(options)`
 
-Loads and manages the WASM modules. Call once at the top of your app.
+Loads and manages the WASM modules. Call once at the top of the app.
 
 ```tsx
 const wasm = useJsonataWasm({
-  evalWasmUrl: '/gnata.wasm',       // Standard Go WASM — expression evaluation
-  evalExecUrl: '/wasm_exec.js',     // Go WASM runtime
+  evalWasmUrl: '/gnata.wasm',       // Standard Go WASM — expression evaluation (optional)
+  evalExecUrl: '/wasm_exec.js',     // Go WASM runtime (optional)
   lspWasmUrl: '/gnata-lsp.wasm',    // TinyGo WASM — LSP (diagnostics, autocomplete, hover)
   lspExecUrl: '/lsp-wasm_exec.js',  // TinyGo WASM runtime
 })
@@ -75,19 +71,28 @@ const wasm = useJsonataWasm({
 // wasm.gnataCompile — compile an expression: gnataCompile(expr) → string
 ```
 
-The LSP WASM is optional — if `lspWasmUrl` is omitted, editors work with syntax highlighting only (no diagnostics, autocomplete, or hover).
+The eval WASM URLs (`evalWasmUrl`, `evalExecUrl`) are optional — omit them for editor-only mode (diagnostics, autocomplete, and hover without live evaluation).
 
-### `useJsonataEval(expression, inputJson, wasm)`
+The LSP WASM is also optional — if `lspWasmUrl` is omitted, editors work with syntax highlighting only (no diagnostics, autocomplete, or hover).
+
+### `useJsonataEval(expression, inputJson, gnataEval, debounceMs?)`
 
 Evaluates a JSONata expression against JSON input with debouncing and timing.
 
 ```tsx
-const { result, error, timing } = useJsonataEval(expression, inputJson, wasm)
+const wasm = useJsonataWasm({ evalWasmUrl: '/gnata.wasm', evalExecUrl: '/wasm_exec.js' })
+const { result, error, isSuccess, timing, timingMs, evaluate } =
+  useJsonataEval(expression, inputJson, wasm.gnataEval)
 
-// result  — evaluation result as a string (null if error)
-// error   — error message (null if success)
-// timing  — evaluation time in milliseconds
+// result    — evaluation result as a string
+// error     — error message (null if success)
+// isSuccess — whether evaluation succeeded
+// timing    — human-readable evaluation time (e.g. "12ms")
+// timingMs  — evaluation time in milliseconds
+// evaluate  — manually trigger evaluation
 ```
+
+The third argument is `wasm.gnataEval` (the eval function), not the full `wasm` object. Pass `null` if WASM has not loaded yet.
 
 ### `useJsonataSchema(inputJson)`
 
@@ -95,7 +100,7 @@ Builds an autocomplete schema from sample JSON data. Pass the result to `<Jsonat
 
 ```tsx
 const schema = useJsonataSchema(inputJson)
-// Returns a JSON string describing the document structure
+// Returns a Schema object describing the document structure
 ```
 
 ### `useJsonataEditor(options)`
@@ -103,17 +108,46 @@ const schema = useJsonataSchema(inputJson)
 Low-level hook — creates a CodeMirror 6 `EditorView` with the full extension stack. Use this for custom editor layouts.
 
 ```tsx
-const { ref, view } = useJsonataEditor({
-  initialValue: '$sum(items.price)',
+const containerRef = useRef<HTMLDivElement>(null)
+const { view, getValue, setValue, setTheme } = useJsonataEditor({
+  containerRef,
+  initialDoc: '$sum(items.price)',
   onChange: (value) => setExpression(value),
   schema,
-  wasm,
+  gnataEval: wasm.gnataEval,
+  gnataDiagnostics: wasm.gnataDiagnostics,
+  gnataCompletions: wasm.gnataCompletions,
+  gnataHover: wasm.gnataHover,
   theme: 'dark',
-  getInputJson: () => inputJson, // for introspective autocomplete
+  getInputJson: () => inputJson,
 })
 
-return <div ref={ref} />
+return <div ref={containerRef} />
 ```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `containerRef` | `RefObject<HTMLElement>` | Ref to the container element |
+| `initialDoc` | `string` | Initial editor content |
+| `placeholder` | `string` | Placeholder text |
+| `onChange` | `(value: string) => void` | Content change callback |
+| `onRun` | `() => void` | Cmd+Enter callback |
+| `theme` | `'dark' \| 'light'` | Color theme |
+| `themeOverrides` | `object` | Override specific theme tokens |
+| `themeExtensions` | `Extension[]` | Replace built-in theme with custom extensions |
+| `gnataEval` | `(expr, json) => string` | Eval function from WASM |
+| `gnataDiagnostics` | `(doc) => string` | Diagnostics function from WASM |
+| `gnataCompletions` | `(doc, pos, schema) => string` | Completions function from WASM |
+| `gnataHover` | `(doc, pos, schema) => string \| null` | Hover function from WASM |
+| `getInputJson` | `() => string` | Current input JSON for autocomplete |
+| `schema` | `Schema` | Schema object for autocomplete |
+| `lineNumbers` | `boolean` | Show line numbers |
+
+**Returns:** `{ view: EditorView | null, getValue: () => string, setValue: (value: string) => void, setTheme: (theme: 'dark' | 'light') => void }`
+
+### `useJsonataLsp(options)`
+
+Convenience hook for editor-only mode — sets up LSP features (diagnostics, autocomplete, hover) without requiring an eval WASM module.
 
 ## Components
 
@@ -125,13 +159,26 @@ Full three-panel widget: expression editor + JSON input + result display.
 <JsonataPlayground
   defaultExpression="Account.Order.Product.Price"
   defaultInput={jsonString}
-  wasm={wasm}
-  theme="dark"       // 'dark' | 'light'
-  height={500}       // panel height in px
-  onExpressionChange={(expr) => {}}
-  onInputChange={(json) => {}}
+  wasmOptions={{
+    evalWasmUrl: '/gnata.wasm',
+    evalExecUrl: '/wasm_exec.js',
+    lspWasmUrl: '/gnata-lsp.wasm',
+    lspExecUrl: '/lsp-wasm_exec.js',
+  }}
+  theme="dark"
+  height={500}
 />
 ```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `defaultExpression` | `string` | `''` | Initial expression |
+| `defaultInput` | `string` | `'{}'` | Initial JSON input |
+| `wasmOptions` | `UseJsonataWasmOptions` | — | Options passed to `useJsonataWasm` internally |
+| `theme` | `'dark' \| 'light'` | `'dark'` | Color theme |
+| `height` | `number` | `400` | Panel height in px |
+| `className` | `string` | — | CSS class for the container |
+| `style` | `CSSProperties` | — | Inline styles for the container |
 
 ### `<JsonataEditor>`
 
@@ -142,12 +189,17 @@ Expression editor with syntax highlighting, autocomplete, hover docs, and diagno
   value={expression}
   onChange={setExpression}
   schema={schema}
-  wasm={wasm}
+  gnataEval={wasm.gnataEval}
+  gnataDiagnostics={wasm.gnataDiagnostics}
+  gnataCompletions={wasm.gnataCompletions}
+  gnataHover={wasm.gnataHover}
   theme="dark"
   placeholder="e.g. Account.Order.Product.Price"
-  getInputJson={() => inputJson}  // for introspective autocomplete
+  getInputJson={() => inputJson}
 />
 ```
+
+Individual WASM function props are passed instead of a `wasm` object — omit them for syntax-highlighting-only mode.
 
 **Introspective autocomplete:** When typing after a `.`, the editor evaluates the prefix expression against the input data to discover available keys. Type `Account.Order.` and it suggests `Product`, `OrderID`, etc. — with types.
 
@@ -181,10 +233,13 @@ Read-only result display. Green text on success, red on error.
 All components use the Tokyo Night color scheme by default. Export the theme factory for customization:
 
 ```tsx
-import { tokyoNightTheme, darkColors, lightColors } from '@gnata-sqlite/react'
+import { tokyoNightTheme, tooltipTheme, darkColors, lightColors } from '@gnata-sqlite/react'
 
 // Use the built-in theme
 const extensions = [tokyoNightTheme('dark')]
+
+// Standalone tooltip styling
+const tooltipExt = [tooltipTheme('dark')]
 
 // Access color tokens directly
 console.log(darkColors.green)  // '#9ece6a'
@@ -210,6 +265,7 @@ console.log(darkColors.bg)     // '#1a1b26'
 import {
   jsonataStreamLanguage, // CodeMirror StreamLanguage for JSONata
   buildSchema,           // Build schema from JSON data
+  tooltipTheme,          // Standalone tooltip styling extension
   formatHoverMarkdown,   // Format LSP hover markdown to HTML
   formatTiming,          // Format ms to human-readable timing
 } from '@gnata-sqlite/react'
@@ -217,7 +273,7 @@ import {
 
 ## WASM Files
 
-The package does not bundle WASM files — you serve them yourself. Build from source:
+The package does not bundle WASM files — serve them from the host application. Build from source:
 
 ```bash
 # Eval module (standard Go WASM)
@@ -229,7 +285,7 @@ tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -target wasm ./editor/
 cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
 ```
 
-Serve all four files from your public/static directory.
+Serve all four files from the public/static directory.
 
 ## License
 

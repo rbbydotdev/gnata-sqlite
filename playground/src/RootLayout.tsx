@@ -91,7 +91,7 @@ export function RootLayout() {
       />
 
       <header>
-        <h1><span>gnata-sqlite</span></h1>
+        <h1><a href="https://rbby.dev/gnata-sqlite/" style={{ color: 'inherit', textDecoration: 'none' }}><span>gnata-sqlite</span></a></h1>
         <div className="mode-tabs">
           <Link
             to="/sqlite"

@@ -108,51 +108,6 @@ Flat rows:
 
 ---
 
-## Native LSP server
-
-### Build
-
-```bash
-go build -o gnata-lsp ./editor/
-```
-
-### VS Code
-
-```json
-{ "jsonata.lsp.serverPath": "/path/to/gnata-lsp" }
-```
-
-### Neovim (lspconfig)
-
-```lua
-require("lspconfig.configs").jsonata = {
-  default_config = {
-    cmd = { "/path/to/gnata-lsp" },
-    filetypes = { "jsonata" },
-    root_dir = function() return vim.loop.cwd() end,
-  },
-}
-require("lspconfig").jsonata.setup({})
-```
-
-### LSP capabilities
-
-| Capability | Supported |
-|-----------|-----------|
-| `textDocument/publishDiagnostics` | Yes — real-time parse errors |
-| `textDocument/completion` | Yes — functions, fields, keywords |
-| `textDocument/hover` | Yes — signatures + examples |
-| `textDocument/didOpen` | Yes |
-| `textDocument/didChange` | Yes (full sync) |
-
-### Schema via initializationOptions
-
-```json
-{ "initializationOptions": { "schema": "{\"fields\":{\"id\":{\"type\":\"number\"}}}" } }
-```
-
----
-
 ## Build tags
 
 | File | Purpose | Build constraint |

@@ -7,28 +7,7 @@ gnata-sqlite is a stack: Go engine, SQLite extension, language server, editor co
 
 ## Layer diagram
 
-```
-┌─────────────────────────────────────────────────┐
-│          @gnata-sqlite/playground               │
-│         (Vite + React, two modes)               │
-├─────────────────────┬───────────────────────────┤
-│  @gnata-sqlite/react│     sql.js + gnata ext    │
-│  (hooks, components)│     (WASM SQLite with     │
-├─────────────────────┤      loadable extension)  │
-│  @gnata-sqlite/     │                           │
-│    codemirror       │                           │
-│  (sync HL + async   │                           │
-│   WASM LSP)         │                           │
-├─────────────────────┼───────────────────────────┤
-│  gnata-lsp.wasm     │     sqlite/ extension     │
-│  (TinyGo, 182KB)    │     (CGo, c-shared)       │
-├─────────────────────┴───────────────────────────┤
-│            gnata core engine (Go)               │
-│    GJSON fast path  ←→  full AST evaluator      │
-│         single dep: tidwall/gjson               │
-└─────────────────────────────────────────────────┘
-         ↑ schema JSON flows down from backend
-```
+<LayerDiagram />
 
 ## Core engine
 

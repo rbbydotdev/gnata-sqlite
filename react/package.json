@@ -10,10 +10,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./tooltips.css": "./tooltips.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "tooltips.css"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",

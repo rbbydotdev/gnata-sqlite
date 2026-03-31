@@ -94,17 +94,6 @@ export function GnataMode() {
     [],
   );
 
-  // Keyboard shortcut for Cmd+Enter
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        // handled by editor's own keydown
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, []);
-
   const colors = theme === 'dark'
     ? { surface: '#1f2335', border: '#292e42', muted: '#565f89', green: '#9ece6a', accent: '#7aa2f7', accentText: '#1a1b26' }
     : { surface: '#e1e2e7', border: '#c4c8da', muted: '#848cb5', green: '#587539', accent: '#2e7de9', accentText: '#ffffff' };
