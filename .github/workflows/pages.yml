@@ -23,9 +23,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - uses: nicholasgasior/setup-tinygo@v1
-        with:
-          tinygo-version: 0.35.0
+      - name: Install TinyGo
+        run: |
+          wget -q https://github.com/tinygo-org/tinygo/releases/download/v0.40.1/tinygo_0.40.1_amd64.deb -O /tmp/tinygo.deb
+          sudo dpkg -i /tmp/tinygo.deb
 
       - name: Build WASM artifacts
         run: |
