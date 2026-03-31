@@ -1,27 +1,21 @@
 # gnata-sqlite
 
-A full [JSONata 2.x](https://jsonata.org) implementation in Go with SQLite integration, editor tooling, and query optimization.
+Full [JSONata 2.x](https://jsonata.org) implementation in Go — with a loadable SQLite extension, streaming query optimizer, and 85KB WASM LSP.
 
-## Fork Notice
+[![CI](https://github.com/rbbydotdev/gnata-sqlite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbbydotdev/gnata-sqlite/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/rbbydotdev/gnata-sqlite.svg)](https://pkg.go.dev/github.com/rbbydotdev/gnata-sqlite)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go 1.25](https://img.shields.io/badge/Go-1.25-00ADD8.svg)](https://go.dev)
 
-Forked from [RecoLabs/gnata](https://github.com/RecoLabs/gnata), which provides a production-grade JSONata 2.x engine in pure Go. This project extends the core engine with a loadable SQLite extension, a CodeMirror 6 editor with TinyGo WASM LSP, and a query planner that decomposes JSONata into streaming SQL-friendly operations.
+## Highlights
 
-## Packages
+- **5M+ eval ops/sec** — two-tier evaluator with GJSON fast path hitting 10M+ ops/sec for simple paths
+- **Full JSONata 2.x spec** — paths, wildcards, lambdas, closures, higher-order functions, 50+ stdlib functions. 1,778 conformance tests, 0 failures
+- **SQLite extension** — `jsonata()`, `jsonata_query()`, `jsonata_each()` as loadable functions with a built-in query planner
+- **85KB WASM LSP** — TinyGo-compiled language server for in-browser diagnostics and autocomplete
+- **Lock-free streaming** — `StreamEvaluator` with schema-keyed plan caching for high-throughput batch workloads
 
-| Package | Description | Docs |
-|---------|-------------|------|
-| `gnata` (root) | Core JSONata 2.x engine -- full spec, two-tier eval, streaming | [Core features below](#core-engine) |
-| `sqlite/` | SQLite extension -- `jsonata()`, `jsonata_query()`, `jsonata_each()`, mutations | [sqlite/README.md](sqlite/README.md) |
-| `editor/` | CodeMirror 6 language support + TinyGo WASM LSP | [editor/README.md](editor/README.md) |
-
-## Core Engine
-
-The root package implements the full JSONata 2.x specification in pure Go:
-
-- **Full JSONata 2.x** -- paths, wildcards, lambdas, closures, higher-order functions, 50+ stdlib functions
-- **Two-tier evaluation** -- GJSON fast path for simple expressions, full AST interpreter for complex ones
-- **Lock-free `StreamEvaluator`** -- batch evaluation with schema-keyed plan caching for high-throughput workloads
-- **1,778 test cases** from the official jsonata-js conformance suite (0 failures, 0 skips)
+## Quick Start
 
 ```go
 import "github.com/rbbydotdev/gnata-sqlite"
@@ -33,8 +27,6 @@ fmt.Println(result) // [34.45 21.67]
 
 ## SQLite Extension
 
-A loadable SQLite extension that brings JSONata expressions into SQL queries. Query, transform, and aggregate JSON data directly from SQLite.
-
 ```sql
 .load ./gnata_jsonata sqlite3_jsonata_init
 
@@ -45,27 +37,43 @@ SELECT jsonata_query('$sum(amount)', data) FROM orders;
 -- 4250
 ```
 
-Key functions:
+| Function | Description |
+|----------|-------------|
+| `jsonata(json, expr)` | Evaluate expression against JSON |
+| `jsonata_query(expr, json)` | Expression-first argument order |
+| `jsonata_each(expr, json)` | Expand results into rows (table-valued) |
+| `jsonata_set(json, path, val)` | Set a value at a path |
+| `jsonata_delete(json, path)` | Delete a value at a path |
 
-- `jsonata(json, expr)` -- evaluate a JSONata expression against a JSON value
-- `jsonata_query(expr, json)` -- same operation, expression-first argument order
-- `jsonata_each(expr, json)` -- expand results into rows (table-valued function)
-- `jsonata_set(json, path, value)` -- set a value at a path
-- `jsonata_delete(json, path)` -- delete a value at a path
+See [sqlite/README.md](sqlite/README.md) for full docs. Query optimization details in [sqlite/OPTIMIZATION.md](sqlite/OPTIMIZATION.md).
 
-The built-in query planner decomposes JSONata expressions into streaming SQL-friendly operations for better performance on large datasets. See [sqlite/OPTIMIZATION.md](sqlite/OPTIMIZATION.md) and [sqlite/BLOGPOST.md](sqlite/BLOGPOST.md) for details.
+## Benchmarks
 
-See [sqlite/README.md](sqlite/README.md) for full documentation.
+![Eval Performance](assets/benchmark-eval.png)
 
-## Editor / LSP
+![GJSON Fast Path](assets/benchmark-fastpath.png)
 
-CodeMirror 6 language support and LSP server for JSONata, powered by gnata's parser.
+<details>
+<summary>Raw numbers (Apple M1)</summary>
 
-- **TinyGo WASM LSP** -- 182 KB module (85 KB gzipped) for in-browser diagnostics and autocomplete
-- **CodeMirror 6 npm package** -- `@gnata/codemirror` with syntax highlighting, error diagnostics, context-aware autocomplete, and hover documentation
-- **Native LSP server** -- stdio JSON-RPC for VS Code, Neovim, and other editors
+| Benchmark | ops/sec | ns/op | allocs/op |
+|-----------|---------|-------|-----------|
+| Eval `Account.Name` | **5,037,783** | 198 | 4 |
+| Eval `Order.Product.SKU` | 2,160,554 | 463 | 10 |
+| Eval `Product[Price>50].SKU` | 895,255 | 1,117 | 26 |
+| Eval `$sum(Product.*)` | 654,006 | 1,529 | 44 |
+| EvalBytes `Account.Name` | **10,280,965** | 97 | 2 |
+| Compile `Account.Name` | 1,757,469 | 569 | 13 |
 
-See [editor/README.md](editor/README.md) for full documentation.
+</details>
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| `gnata` (root) | Core JSONata 2.x engine — full spec, two-tier eval, streaming |
+| [`sqlite/`](sqlite/README.md) | SQLite extension — loadable functions, query planner, mutations |
+| [`editor/`](editor/README.md) | CodeMirror 6 language support + TinyGo WASM LSP |
 
 ## Building
 
@@ -85,8 +93,16 @@ cd editor/codemirror && npm install && npm run build
 
 ## Playground
 
-Open `playground.html` for interactive testing of JSONata expressions and the SQLite extension in the browser.
+Open `playground.html` or visit the [live playground](https://rbbydotdev.github.io/gnata-sqlite/) for interactive testing of JSONata expressions and the SQLite extension.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## Fork Notice
+
+Forked from [RecoLabs/gnata](https://github.com/RecoLabs/gnata), which provides a production-grade JSONata 2.x engine in pure Go. This project extends the core engine with a SQLite extension, editor tooling, and query optimizer.
 
 ## License
 
-MIT. Based on [RecoLabs/gnata](https://github.com/RecoLabs/gnata).
+[MIT](LICENSE)

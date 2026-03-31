@@ -13,7 +13,7 @@ Two delivery modes from the same codebase:
 
 ```typescript
 import { EditorView, basicSetup } from "codemirror"
-import { jsonataFull, initWasm } from "@gnata/codemirror"
+import { jsonataFull, initWasm } from "@gnata-sqlite/codemirror"
 
 // Load the WASM module (182 KB, 85 KB gzipped).
 await initWasm("/gnata-lsp.wasm", "/lsp-wasm_exec.js")
@@ -169,7 +169,7 @@ Pass the schema when the LSP client initializes:
 Syntax highlighting only. No WASM required.
 
 ```typescript
-import { jsonata } from "@gnata/codemirror"
+import { jsonata } from "@gnata-sqlite/codemirror"
 // extensions: [basicSetup, jsonata()]
 ```
 
@@ -178,7 +178,7 @@ import { jsonata } from "@gnata/codemirror"
 Full support: syntax highlighting + WASM linter + autocomplete.
 
 ```typescript
-import { jsonataFull } from "@gnata/codemirror"
+import { jsonataFull } from "@gnata-sqlite/codemirror"
 // extensions: [basicSetup, jsonataFull({ schema: '...' })]
 ```
 
@@ -254,7 +254,7 @@ npm run build
 ```tsx
 import { useEffect, useRef } from "react"
 import { EditorView, basicSetup } from "codemirror"
-import { jsonataFull, initWasm } from "@gnata/codemirror"
+import { jsonataFull, initWasm } from "@gnata-sqlite/codemirror"
 
 export function JsonataEditor({ schema }: { schema: string }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -278,7 +278,7 @@ export function JsonataEditor({ schema }: { schema: string }) {
 <div id="editor"></div>
 <script type="module">
   import { EditorView, basicSetup } from "codemirror"
-  import { jsonata, initWasm, jsonataLint } from "@gnata/codemirror"
+  import { jsonata, initWasm, jsonataLint } from "@gnata-sqlite/codemirror"
 
   // Syntax highlighting works immediately.
   const view = new EditorView({
@@ -303,7 +303,7 @@ editor/
   funcinfo.go            # Built-in function catalog (70+ functions)
   schema.go              # Schema JSON parser (no encoding/json)
   marshal.go             # Reflect-free AST → JSON serializer
-  codemirror/            # npm package (@gnata/codemirror)
+  codemirror/            # npm package (@gnata-sqlite/codemirror)
     src/
       jsonata.grammar    # Lezer grammar for syntax highlighting
       highlight.js       # CodeMirror style tag mappings

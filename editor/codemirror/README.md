@@ -1,4 +1,4 @@
-# @gnata/codemirror
+# @gnata-sqlite/codemirror
 
 CodeMirror 6 language support for [JSONata](https://jsonata.org) expressions — syntax highlighting, error diagnostics, autocomplete, and hover documentation, powered by a 85KB WASM module.
 
@@ -12,7 +12,7 @@ CodeMirror 6 language support for [JSONata](https://jsonata.org) expressions —
 ## Install
 
 ```bash
-npm install @gnata/codemirror
+npm install @gnata-sqlite/codemirror
 ```
 
 You also need the WASM files served from your app:
@@ -23,7 +23,7 @@ You also need the WASM files served from your app:
 
 ```ts
 import { EditorView, basicSetup } from "codemirror"
-import { initWasm, jsonataFull } from "@gnata/codemirror"
+import { initWasm, jsonataFull } from "@gnata-sqlite/codemirror"
 
 // 1. Load WASM (once, at startup)
 await initWasm("/gnata-lsp.wasm", "/lsp-wasm_exec.js")
@@ -73,7 +73,7 @@ import {
   jsonataLint,       // error diagnostics
   jsonataCompletion, // autocomplete
   jsonataHover,      // hover tooltips
-} from "@gnata/codemirror"
+} from "@gnata-sqlite/codemirror"
 
 extensions: [
   jsonata(),
@@ -357,7 +357,7 @@ A complete working example using ESM imports (no build step):
 │   Your App (browser)    │     │    gnata-lsp.wasm (85KB)  │
 │                         │     │    TinyGo WASM module     │
 │  CodeMirror Editor      │────▶│                          │
-│  + @gnata/codemirror    │     │  _gnataDiagnostics(expr) │
+│  + @gnata-sqlite/codemirror    │     │  _gnataDiagnostics(expr) │
 │                         │◀────│  _gnataCompletions(...)   │
 │                         │     │  _gnataHover(expr, pos)   │
 └─────────────────────────┘     └──────────────────────────┘
