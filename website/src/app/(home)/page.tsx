@@ -63,10 +63,15 @@ const features = [
   },
 ];
 
-const sqlCode = `-- Evaluate JSONata inside SQL queries
-SELECT jsonata('price * quantity', data)
-  FROM orders
- WHERE jsonata('status = "shipped"', data);`;
+const sqlCode = `SELECT status, count(*) as orders,
+  jsonata_query('{
+    "revenue": $round($sum(total), 2),
+    "avg":     $round($average(total), 2),
+    "top":     $max(total)
+  }', data) as stats
+FROM orders
+GROUP BY status
+ORDER BY orders DESC;`;
 
 const reactCode = `import { JsonataPlayground } from '@gnata-sqlite/react'
 
@@ -165,6 +170,53 @@ export default async function HomePage() {
         </a>
       </section>
 
+      {/* Code examples */}
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <h2 className="mb-8 text-center text-2xl font-bold landing-text-strong">
+          From database to browser
+        </h2>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* SQL example */}
+          <div className="overflow-hidden rounded-md border landing-code-bg">
+            <div
+              className="flex items-center gap-2 border-b px-4 py-2 text-xs font-semibold landing-code-header"
+              style={{ borderLeft: '3px solid #7aa2f7' }}
+            >
+              <Database className="size-3.5" style={{ color: '#7aa2f7' }} />
+              SQLite Extension
+            </div>
+            <div
+              className="overflow-x-auto text-[13px] leading-relaxed [&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!p-4"
+              style={{
+                fontFamily:
+                  'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace',
+              }}
+              dangerouslySetInnerHTML={{ __html: sqlHtml }}
+            />
+          </div>
+
+          {/* React example */}
+          <div className="overflow-hidden rounded-md border landing-code-bg">
+            <div
+              className="flex items-center gap-2 border-b px-4 py-2 text-xs font-semibold landing-code-header"
+              style={{ borderLeft: '3px solid #bb9af7' }}
+            >
+              <Component className="size-3.5" style={{ color: '#bb9af7' }} />
+              React Editor
+            </div>
+            <div
+              className="overflow-x-auto text-[13px] leading-relaxed [&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!p-4"
+              style={{
+                fontFamily:
+                  'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace',
+              }}
+              dangerouslySetInnerHTML={{ __html: reactHtml }}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Features grid */}
       <section className="mx-auto max-w-5xl px-6 py-16">
         <div className="grid gap-6 sm:grid-cols-2">
@@ -209,53 +261,6 @@ export default async function HomePage() {
           The interactive playground running the SQLite extension, WASM LSP, and CodeMirror editor together
         </p>
         <ScreenshotGallery />
-      </section>
-
-      {/* Code examples */}
-      <section className="mx-auto max-w-5xl px-6 py-16">
-        <h2 className="mb-8 text-center text-2xl font-bold landing-text-strong">
-          From database to browser
-        </h2>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* SQL example */}
-          <div className="overflow-hidden rounded-md border landing-code-bg">
-            <div
-              className="flex items-center gap-2 border-b px-4 py-2 text-xs font-semibold landing-code-header"
-              style={{ borderLeft: '3px solid #7aa2f7' }}
-            >
-              <Database className="size-3.5" style={{ color: '#7aa2f7' }} />
-              SQL
-            </div>
-            <div
-              className="overflow-x-auto text-[13px] leading-relaxed [&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!p-4"
-              style={{
-                fontFamily:
-                  'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace',
-              }}
-              dangerouslySetInnerHTML={{ __html: sqlHtml }}
-            />
-          </div>
-
-          {/* React example */}
-          <div className="overflow-hidden rounded-md border landing-code-bg">
-            <div
-              className="flex items-center gap-2 border-b px-4 py-2 text-xs font-semibold landing-code-header"
-              style={{ borderLeft: '3px solid #bb9af7' }}
-            >
-              <Component className="size-3.5" style={{ color: '#bb9af7' }} />
-              React
-            </div>
-            <div
-              className="overflow-x-auto text-[13px] leading-relaxed [&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!p-4"
-              style={{
-                fontFamily:
-                  'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace',
-              }}
-              dangerouslySetInnerHTML={{ __html: reactHtml }}
-            />
-          </div>
-        </div>
       </section>
 
       {/* Footer */}

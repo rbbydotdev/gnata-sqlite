@@ -2,18 +2,20 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 
+const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 interface Screenshot {
   src: string;
   alt: string;
 }
 
 const screenshots: Screenshot[] = [
-  { src: '/screenshots/playground-gnata-autocomplete.png', alt: 'Context-aware autocomplete' },
-  { src: '/screenshots/playground-gnata-hover.png', alt: 'Hover documentation' },
-  { src: '/screenshots/playground-gnata-transform.png', alt: 'Object construction' },
-  { src: '/screenshots/playground-gnata-pipeline.png', alt: 'Pipeline chaining' },
-  { src: '/screenshots/playground-sqlite-dashboard.png', alt: 'SQLite dashboard query' },
-  { src: '/screenshots/playground-sqlite-revenue.png', alt: 'Revenue aggregation' },
+  { src: `${base}/screenshots/playground-gnata-autocomplete.png`, alt: 'Context-aware autocomplete' },
+  { src: `${base}/screenshots/playground-gnata-hover.png`, alt: 'Hover documentation' },
+  { src: `${base}/screenshots/playground-gnata-transform.png`, alt: 'Object construction' },
+  { src: `${base}/screenshots/playground-gnata-pipeline.png`, alt: 'Pipeline chaining' },
+  { src: `${base}/screenshots/playground-sqlite-dashboard.png`, alt: 'SQLite dashboard query' },
+  { src: `${base}/screenshots/playground-sqlite-revenue.png`, alt: 'Revenue aggregation' },
 ];
 
 export function ScreenshotGallery() {

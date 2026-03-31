@@ -17,11 +17,13 @@ interface RunExampleProps {
   showInput?: boolean;
 }
 
+const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const WASM_OPTIONS = {
-  evalWasmUrl: '/gnata.wasm',
-  evalExecUrl: '/wasm_exec.js',
-  lspWasmUrl: '/gnata-lsp.wasm',
-  lspExecUrl: '/lsp-wasm_exec.js',
+  evalWasmUrl: `${base}/gnata.wasm`,
+  evalExecUrl: `${base}/wasm_exec.js`,
+  lspWasmUrl: `${base}/gnata-lsp.wasm`,
+  lspExecUrl: `${base}/lsp-wasm_exec.js`,
 };
 
 interface Palette {
