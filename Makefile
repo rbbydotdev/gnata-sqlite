@@ -26,6 +26,7 @@ extension:
 wasm:
 	GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
 	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
+	# -gc=leaking ?
 	tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -target wasm ./editor/
 	cp "$$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
 
