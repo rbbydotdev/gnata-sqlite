@@ -77,8 +77,18 @@ jobs:
           cp -r website/out/* _site/
           mkdir -p _site/playground
           cp -r playground/dist/* _site/playground/
-          # SPA fallback — serve index.html for all playground routes
-          cp _site/playground/index.html _site/playground/404.html
+          # SPA fallback for playground routes
+          # GitHub Pages only checks root 404.html, so use a redirect
+          cat > _site/404.html << 'FOUROHFOUR'
+          <!DOCTYPE html><html><head><meta charset="utf-8"><script>
+          var p = window.location.pathname;
+          if (p.startsWith('/gnata-sqlite/playground')) {
+            var base = '/gnata-sqlite/playground/';
+            var route = p.slice(base.length);
+            window.location.replace(base + '?route=' + encodeURIComponent(route) + window.location.hash);
+          }
+          </script></head><body></body></html>
+          FOUROHFOUR
 
       - uses: actions/upload-pages-artifact@v3
 
