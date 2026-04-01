@@ -102,9 +102,18 @@ const reactHtml = await codeToHtml(reactCode, {
 
 import type { Metadata } from 'next';
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export const metadata: Metadata = {
   title: 'gnata-sqlite — End-to-end JSONata 2.x for SQLite, with React Editor',
   description: 'Let end-users write JSONata expressions against SQLite data. Loadable SQLite extension, 85KB TinyGo WASM LSP with autocomplete and hover docs, and a composable React editor widget. Open source, MIT licensed.',
+  openGraph: {
+    images: `${basePath}/og-image.png`,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: `${basePath}/og-image.png`,
+  },
 };
 
 export default async function HomePage() {

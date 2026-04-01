@@ -3,10 +3,8 @@ import { Provider } from '@/components/provider';
 import type { Metadata } from 'next';
 import './global.css';
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(`https://rbby.dev${basePath}`),
+  metadataBase: new URL('https://rbby.dev'),
 };
 
 const onest = Onest({
