@@ -103,8 +103,8 @@ const reactHtml = await codeToHtml(reactCode, {
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'gnata-sqlite',
-  description: 'End-to-end JSONata 2.x in Go — SQLite extension, WASM LSP, CodeMirror editor, composable React widget',
+  title: 'gnata-sqlite — End-to-end JSONata 2.x for SQLite, with React Editor',
+  description: 'Let end-users write JSONata expressions against SQLite data. Loadable SQLite extension, 85KB TinyGo WASM LSP with autocomplete and hover docs, and a composable React editor widget. Open source, MIT licensed.',
 };
 
 export default async function HomePage() {
