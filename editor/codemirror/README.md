@@ -16,7 +16,7 @@ npm install @gnata-sqlite/codemirror
 ```
 
 You also need the WASM files served from your app:
-- `gnata-lsp.wasm` (85KB gzipped)
+- `gnata-lsp.wasm` (61KB gzipped)
 - `lsp-wasm_exec.js` (TinyGo runtime)
 
 ## Quick Start

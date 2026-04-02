@@ -49,7 +49,8 @@ go build -buildmode=c-shared -o gnata_jsonata.dylib ./sqlite
 go build -buildmode=c-shared -o gnata_jsonata.so ./sqlite
 
 # Build WASM LSP
-tinygo build -o gnata-lsp.wasm -target wasm ./editor
+tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -scheduler=none -panic=trap -target wasm ./editor/
+wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
 
 # Build WASM playground
 GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm

@@ -4,7 +4,7 @@ CodeMirror 6 language support and LSP server for JSONata, powered by gnata's par
 
 Two delivery modes from the same codebase:
 
-- **Browser** — TinyGo WASM module (182 KB) for CodeMirror diagnostics and autocomplete
+- **Browser** — TinyGo WASM module (126 KB) for CodeMirror diagnostics and autocomplete
 - **Server** — Native Go LSP server (stdio JSON-RPC) for VS Code, Neovim, etc.
 
 ## Quick Start
@@ -15,7 +15,7 @@ Two delivery modes from the same codebase:
 import { EditorView, basicSetup } from "codemirror"
 import { jsonataFull, initWasm } from "@gnata-sqlite/codemirror"
 
-// Load the WASM module (182 KB, 85 KB gzipped).
+// Load the WASM module (126 KB, 61 KB gzipped).
 await initWasm("/gnata-lsp.wasm", "/lsp-wasm_exec.js")
 
 new EditorView({
@@ -58,7 +58,7 @@ require("lspconfig").jsonata.setup({})
                     +---------------------------+
                     |  Lezer Grammar  |  WASM   |
                     |  (sync, every   | (async, |
-                    |   keystroke)    | 182 KB) |
+                    |   keystroke)    | 126 KB) |
                     |                 |         |
                     |  Highlighting   | Diags   |
                     |  Brackets       | Compl.  |
@@ -224,16 +224,17 @@ Diagnostics are pushed as `textDocument/publishDiagnostics` notifications.
 ### WASM Module
 
 ```bash
-GOOS=js GOARCH=wasm tinygo build \
+tinygo build \
   -o gnata-lsp.wasm -no-debug \
-  -gc=conservative \
-  ./editor/
+  -gc=conservative -scheduler=none -panic=trap \
+  -target wasm ./editor/
+wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
 
 # Copy TinyGo's WASM support file.
 cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
 ```
 
-Output: `gnata-lsp.wasm` (182 KB raw, 85 KB gzipped)
+Output: `gnata-lsp.wasm` (126 KB raw, 61 KB gzipped)
 
 ### Native LSP Server
 

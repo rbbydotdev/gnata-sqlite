@@ -6,7 +6,8 @@
 //
 // Build:
 //
-//	GOOS=js GOARCH=wasm tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative ./editor/
+//	tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -scheduler=none -panic=trap -target wasm ./editor/
+//	wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
 package main
 
 import (

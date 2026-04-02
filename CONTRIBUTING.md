@@ -22,7 +22,8 @@ go build -buildmode=c-shared -o gnata_jsonata.dylib ./sqlite
 Requires [TinyGo](https://tinygo.org):
 
 ```bash
-tinygo build -o gnata-lsp.wasm -target wasm ./editor
+tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -scheduler=none -panic=trap -target wasm ./editor/
+wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
 ```
 
 ### Optional: CodeMirror Package

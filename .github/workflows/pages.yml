@@ -39,11 +39,15 @@ jobs:
           wget -q https://github.com/tinygo-org/tinygo/releases/download/v0.40.1/tinygo_0.40.1_amd64.deb -O /tmp/tinygo.deb
           sudo dpkg -i /tmp/tinygo.deb
 
+      - name: Install Binaryen
+        run: sudo apt-get install -y binaryen
+
       - name: Build WASM
         run: |
           GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
           cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
-          tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -target wasm ./editor/
+          tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -scheduler=none -panic=trap -target wasm ./editor/
+          wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
           cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
 
       - name: Install dependencies

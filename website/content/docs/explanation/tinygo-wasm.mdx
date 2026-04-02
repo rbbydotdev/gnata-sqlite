@@ -15,8 +15,8 @@ WASM compiles the actual Go parser to run in the browser. Same code, same behavi
 
 | | Standard Go | TinyGo |
 |--|------------|--------|
-| Binary size | ~5.3 MB | 182 KB (85 KB gzipped) |
-| Ratio | 1x | **27x smaller** |
+| Binary size | ~5.3 MB | 126 KB (61 KB gzipped) |
+| Ratio | 1x | **42x smaller** |
 | GC | Concurrent tri-color | Conservative |
 | Goroutines | Full scheduler | Not in WASM |
 | Reflect | Full | Minimal |
@@ -57,7 +57,7 @@ General principle: if the code is a pure function from input to output, TinyGo h
 
 ## The result
 
-- **182 KB** module, **85 KB** over the wire (gzipped)
+- **126 KB** module, **61 KB** over the wire (gzipped)
 - Loads in under 100ms on a typical connection
 - Full diagnostics, autocomplete across 70+ functions, hover documentation
 - Same Go code paths, same test coverage, two compilation targets
