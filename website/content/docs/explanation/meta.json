@@ -1,4 +1,4 @@
 {
   "title": "Explanation",
-  "pages": ["architecture", "query-planner", "tinygo-wasm"]
+  "pages": ["architecture", "query-planner", "tinygo-wasm", "benchmarks"]
 }

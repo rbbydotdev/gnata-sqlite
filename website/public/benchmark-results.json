@@ -1,0 +1,872 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-02T04:17:57.868Z",
+    "platform": "darwin-arm64",
+    "sqliteVersion": "3.50.4",
+    "iterations": 1
+  },
+  "suites": [
+    {
+      "name": "scalar",
+      "category": "jsonata() vs json_extract()",
+      "tests": [
+        {
+          "name": "Simple field extraction",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.119,
+            "mean": 0.119,
+            "min": 0.119,
+            "max": 0.119,
+            "runs": [
+              0.119
+            ]
+          },
+          "native": {
+            "median": 0.043,
+            "mean": 0.043,
+            "min": 0.043,
+            "max": 0.043,
+            "runs": [
+              0.043
+            ]
+          },
+          "ratio": 2.7674
+        },
+        {
+          "name": "Nested field extraction",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.071,
+            "mean": 0.071,
+            "min": 0.071,
+            "max": 0.071,
+            "runs": [
+              0.071
+            ]
+          },
+          "native": {
+            "median": 0.043,
+            "mean": 0.043,
+            "min": 0.043,
+            "max": 0.043,
+            "runs": [
+              0.043
+            ]
+          },
+          "ratio": 1.6512
+        },
+        {
+          "name": "Numeric aggregation",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.059,
+            "mean": 0.059,
+            "min": 0.059,
+            "max": 0.059,
+            "runs": [
+              0.059
+            ]
+          },
+          "native": {
+            "median": 0.043,
+            "mean": 0.043,
+            "min": 0.043,
+            "max": 0.043,
+            "runs": [
+              0.043
+            ]
+          },
+          "ratio": 1.3721
+        },
+        {
+          "name": "Multi-field access per row",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.087,
+            "mean": 0.087,
+            "min": 0.087,
+            "max": 0.087,
+            "runs": [
+              0.087
+            ]
+          },
+          "native": {
+            "median": 0.044,
+            "mean": 0.044,
+            "min": 0.044,
+            "max": 0.044,
+            "runs": [
+              0.044
+            ]
+          },
+          "ratio": 1.9773
+        },
+        {
+          "name": "Conditional transform",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.061,
+            "mean": 0.061,
+            "min": 0.061,
+            "max": 0.061,
+            "runs": [
+              0.061
+            ]
+          },
+          "native": {
+            "median": 0.005,
+            "mean": 0.005,
+            "min": 0.005,
+            "max": 0.005,
+            "runs": [
+              0.005
+            ]
+          },
+          "ratio": 12.2
+        },
+        {
+          "name": "String transform ($uppercase)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.008,
+            "mean": 0.008,
+            "min": 0.008,
+            "max": 0.008,
+            "runs": [
+              0.008
+            ]
+          },
+          "native": {
+            "median": 0.004,
+            "mean": 0.004,
+            "min": 0.004,
+            "max": 0.004,
+            "runs": [
+              0.004
+            ]
+          },
+          "ratio": 2
+        },
+        {
+          "name": "Full scan projection",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.07,
+            "mean": 0.07,
+            "min": 0.07,
+            "max": 0.07,
+            "runs": [
+              0.07
+            ]
+          },
+          "native": {
+            "median": 0.047,
+            "mean": 0.047,
+            "min": 0.047,
+            "max": 0.047,
+            "runs": [
+              0.047
+            ]
+          },
+          "ratio": 1.4894
+        }
+      ]
+    },
+    {
+      "name": "aggregate",
+      "category": "jsonata_query() streaming vs SQL aggregates",
+      "tests": [
+        {
+          "name": "SUM (streaming)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.046,
+            "mean": 0.046,
+            "min": 0.046,
+            "max": 0.046,
+            "runs": [
+              0.046
+            ]
+          },
+          "native": {
+            "median": 0.032,
+            "mean": 0.032,
+            "min": 0.032,
+            "max": 0.032,
+            "runs": [
+              0.032
+            ]
+          },
+          "ratio": 1.4375
+        },
+        {
+          "name": "COUNT (streaming)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.03,
+            "mean": 0.03,
+            "min": 0.03,
+            "max": 0.03,
+            "runs": [
+              0.03
+            ]
+          },
+          "native": {
+            "median": 0,
+            "mean": 0,
+            "min": 0,
+            "max": 0,
+            "runs": [
+              0
+            ]
+          },
+          "ratio": null
+        },
+        {
+          "name": "MAX (streaming)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.044,
+            "mean": 0.044,
+            "min": 0.044,
+            "max": 0.044,
+            "runs": [
+              0.044
+            ]
+          },
+          "native": {
+            "median": 0.032,
+            "mean": 0.032,
+            "min": 0.032,
+            "max": 0.032,
+            "runs": [
+              0.032
+            ]
+          },
+          "ratio": 1.375
+        },
+        {
+          "name": "AVERAGE (streaming)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.044,
+            "mean": 0.044,
+            "min": 0.044,
+            "max": 0.044,
+            "runs": [
+              0.044
+            ]
+          },
+          "native": {
+            "median": 0.032,
+            "mean": 0.032,
+            "min": 0.032,
+            "max": 0.032,
+            "runs": [
+              0.032
+            ]
+          },
+          "ratio": 1.375
+        },
+        {
+          "name": "GROUP BY + SUM (streaming)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.103,
+            "mean": 0.103,
+            "min": 0.103,
+            "max": 0.103,
+            "runs": [
+              0.103
+            ]
+          },
+          "native": {
+            "median": 0.092,
+            "mean": 0.092,
+            "min": 0.092,
+            "max": 0.092,
+            "runs": [
+              0.092
+            ]
+          },
+          "ratio": 1.1196
+        },
+        {
+          "name": "$sort (accumulate, 10k rows)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.04,
+            "mean": 0.04,
+            "min": 0.04,
+            "max": 0.04,
+            "runs": [
+              0.04
+            ]
+          },
+          "native": {
+            "median": 0.003,
+            "mean": 0.003,
+            "min": 0.003,
+            "max": 0.003,
+            "runs": [
+              0.003
+            ]
+          },
+          "ratio": 13.3333
+        },
+        {
+          "name": "Complex expression (accumulate, 1k rows)",
+          "rows": 1000,
+          "gnata": {
+            "median": 0.001,
+            "mean": 0.001,
+            "min": 0.001,
+            "max": 0.001,
+            "runs": [
+              0.001
+            ]
+          },
+          "native": null,
+          "ratio": null
+        }
+      ]
+    },
+    {
+      "name": "each",
+      "category": "jsonata_each() vs json_each()",
+      "tests": [
+        {
+          "name": "Expand tags array",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.016,
+            "mean": 0.016,
+            "min": 0.016,
+            "max": 0.016,
+            "runs": [
+              0.016
+            ]
+          },
+          "native": {
+            "median": 0.006,
+            "mean": 0.006,
+            "min": 0.006,
+            "max": 0.006,
+            "runs": [
+              0.006
+            ]
+          },
+          "ratio": 2.6667
+        },
+        {
+          "name": "Expand + filter (price > 100)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.095,
+            "mean": 0.095,
+            "min": 0.095,
+            "max": 0.095,
+            "runs": [
+              0.095
+            ]
+          },
+          "native": {
+            "median": 0.014,
+            "mean": 0.014,
+            "min": 0.014,
+            "max": 0.014,
+            "runs": [
+              0.014
+            ]
+          },
+          "ratio": 6.7857
+        },
+        {
+          "name": "Expand + transform (inline arithmetic)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.092,
+            "mean": 0.092,
+            "min": 0.092,
+            "max": 0.092,
+            "runs": [
+              0.092
+            ]
+          },
+          "native": {
+            "median": 0.019,
+            "mean": 0.019,
+            "min": 0.019,
+            "max": 0.019,
+            "runs": [
+              0.019
+            ]
+          },
+          "ratio": 4.8421
+        },
+        {
+          "name": "Flatten + deduplicate (DISTINCT)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.023,
+            "mean": 0.023,
+            "min": 0.023,
+            "max": 0.023,
+            "runs": [
+              0.023
+            ]
+          },
+          "native": {
+            "median": 0.008,
+            "mean": 0.008,
+            "min": 0.008,
+            "max": 0.008,
+            "runs": [
+              0.008
+            ]
+          },
+          "ratio": 2.875
+        },
+        {
+          "name": "GROUP BY on expanded elements",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.023,
+            "mean": 0.023,
+            "min": 0.023,
+            "max": 0.023,
+            "runs": [
+              0.023
+            ]
+          },
+          "native": {
+            "median": 0.01,
+            "mean": 0.01,
+            "min": 0.01,
+            "max": 0.01,
+            "runs": [
+              0.01
+            ]
+          },
+          "ratio": 2.3
+        },
+        {
+          "name": "Full scan expand (50k rows)",
+          "rows": 50000,
+          "gnata": {
+            "median": 0.076,
+            "mean": 0.076,
+            "min": 0.076,
+            "max": 0.076,
+            "runs": [
+              0.076
+            ]
+          },
+          "native": {
+            "median": 0.028,
+            "mean": 0.028,
+            "min": 0.028,
+            "max": 0.028,
+            "runs": [
+              0.028
+            ]
+          },
+          "ratio": 2.7143
+        }
+      ]
+    },
+    {
+      "name": "complex",
+      "category": "jsonata_query() vs complex SQL",
+      "tests": [
+        {
+          "name": "COUNT DISTINCT users",
+          "rows": 50000,
+          "gnata": {
+            "median": 0.023,
+            "mean": 0.023,
+            "min": 0.023,
+            "max": 0.023,
+            "runs": [
+              0.023
+            ]
+          },
+          "native": {
+            "median": 0.02,
+            "mean": 0.02,
+            "min": 0.02,
+            "max": 0.02,
+            "runs": [
+              0.02
+            ]
+          },
+          "ratio": 1.15
+        },
+        {
+          "name": "GROUP BY + SUM per-region revenue",
+          "rows": 50000,
+          "gnata": {
+            "median": 0.024,
+            "mean": 0.024,
+            "min": 0.024,
+            "max": 0.024,
+            "runs": [
+              0.024
+            ]
+          },
+          "native": {
+            "median": 0.022,
+            "mean": 0.022,
+            "min": 0.022,
+            "max": 0.022,
+            "runs": [
+              0.022
+            ]
+          },
+          "ratio": 1.0909
+        },
+        {
+          "name": "TOP N users by spend (accumulate)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.017,
+            "mean": 0.017,
+            "min": 0.017,
+            "max": 0.017,
+            "runs": [
+              0.017
+            ]
+          },
+          "native": {
+            "median": 0.005,
+            "mean": 0.005,
+            "min": 0.005,
+            "max": 0.005,
+            "runs": [
+              0.005
+            ]
+          },
+          "ratio": 3.4
+        },
+        {
+          "name": "Flatten + deduplicate tags (accumulate)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.445,
+            "mean": 0.445,
+            "min": 0.445,
+            "max": 0.445,
+            "runs": [
+              0.445
+            ]
+          },
+          "native": {
+            "median": 0.007,
+            "mean": 0.007,
+            "min": 0.007,
+            "max": 0.007,
+            "runs": [
+              0.007
+            ]
+          },
+          "ratio": 63.5714
+        },
+        {
+          "name": "Sessionize user journeys (accumulate)",
+          "rows": 5000,
+          "gnata": {
+            "median": 0.003,
+            "mean": 0.003,
+            "min": 0.003,
+            "max": 0.003,
+            "runs": [
+              0.003
+            ]
+          },
+          "native": {
+            "median": 0.004,
+            "mean": 0.004,
+            "min": 0.004,
+            "max": 0.004,
+            "runs": [
+              0.004
+            ]
+          },
+          "ratio": 0.75
+        },
+        {
+          "name": "Build report object (accumulate)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.008,
+            "mean": 0.008,
+            "min": 0.008,
+            "max": 0.008,
+            "runs": [
+              0.008
+            ]
+          },
+          "native": {
+            "median": 0.011,
+            "mean": 0.011,
+            "min": 0.011,
+            "max": 0.011,
+            "runs": [
+              0.011
+            ]
+          },
+          "ratio": 0.7273
+        },
+        {
+          "name": "Histogram bucketing (accumulate)",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.014,
+            "mean": 0.014,
+            "min": 0.014,
+            "max": 0.014,
+            "runs": [
+              0.014
+            ]
+          },
+          "native": {
+            "median": 0.004,
+            "mean": 0.004,
+            "min": 0.004,
+            "max": 0.004,
+            "runs": [
+              0.004
+            ]
+          },
+          "ratio": 3.5
+        },
+        {
+          "name": "Streaming $sum at scale",
+          "rows": 50000,
+          "gnata": {
+            "median": 0.023,
+            "mean": 0.023,
+            "min": 0.023,
+            "max": 0.023,
+            "runs": [
+              0.023
+            ]
+          },
+          "native": {
+            "median": 0.018,
+            "mean": 0.018,
+            "min": 0.018,
+            "max": 0.018,
+            "runs": [
+              0.018
+            ]
+          },
+          "ratio": 1.2778
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "category": "jsonata_query() full report vs SQL",
+      "tests": [
+        {
+          "name": "Report: vs 5 subqueries (5 scans)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.085,
+            "mean": 0.085,
+            "min": 0.085,
+            "max": 0.085,
+            "runs": [
+              0.085
+            ]
+          },
+          "native": {
+            "median": 0.133,
+            "mean": 0.133,
+            "min": 0.133,
+            "max": 0.133,
+            "runs": [
+              0.133
+            ]
+          },
+          "ratio": 0.6391
+        },
+        {
+          "name": "Report: vs single-scan CASE",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.084,
+            "mean": 0.084,
+            "min": 0.084,
+            "max": 0.084,
+            "runs": [
+              0.084
+            ]
+          },
+          "native": {
+            "median": 0.083,
+            "mean": 0.083,
+            "min": 0.083,
+            "max": 0.083,
+            "runs": [
+              0.083
+            ]
+          },
+          "ratio": 1.012
+        }
+      ]
+    },
+    {
+      "name": "functions",
+      "category": "New gnata functions",
+      "tests": [
+        {
+          "name": "$base64 encode",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.064,
+            "mean": 0.064,
+            "min": 0.064,
+            "max": 0.064,
+            "runs": [
+              0.064
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$urlencode",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.064,
+            "mean": 0.064,
+            "min": 0.064,
+            "max": 0.064,
+            "runs": [
+              0.064
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$htmlescape",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.064,
+            "mean": 0.064,
+            "min": 0.064,
+            "max": 0.064,
+            "runs": [
+              0.064
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$csv format",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.066,
+            "mean": 0.066,
+            "min": 0.066,
+            "max": 0.066,
+            "runs": [
+              0.066
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$number with default (try pattern)",
+          "rows": 100000,
+          "gnata": {
+            "median": 0.151,
+            "mean": 0.151,
+            "min": 0.151,
+            "max": 0.151,
+            "runs": [
+              0.151
+            ]
+          },
+          "native": {
+            "median": 0.072,
+            "mean": 0.072,
+            "min": 0.072,
+            "max": 0.072,
+            "runs": [
+              0.072
+            ]
+          },
+          "ratio": 2.0972
+        },
+        {
+          "name": "jsonata_set vs json_set",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.045,
+            "mean": 0.045,
+            "min": 0.045,
+            "max": 0.045,
+            "runs": [
+              0.045
+            ]
+          },
+          "native": {
+            "median": 0.009,
+            "mean": 0.009,
+            "min": 0.009,
+            "max": 0.009,
+            "runs": [
+              0.009
+            ]
+          },
+          "ratio": 5
+        },
+        {
+          "name": "jsonata_delete vs json_remove",
+          "rows": 10000,
+          "gnata": {
+            "median": 0.041,
+            "mean": 0.041,
+            "min": 0.041,
+            "max": 0.041,
+            "runs": [
+              0.041
+            ]
+          },
+          "native": {
+            "median": 0.013,
+            "mean": 0.013,
+            "min": 0.013,
+            "max": 0.013,
+            "runs": [
+              0.013
+            ]
+          },
+          "ratio": 3.1538
+        },
+        {
+          "name": "Format in aggregate context",
+          "rows": 1000,
+          "gnata": {
+            "median": 0.011,
+            "mean": 0.011,
+            "min": 0.011,
+            "max": 0.011,
+            "runs": [
+              0.011
+            ]
+          },
+          "native": null,
+          "ratio": null
+        }
+      ]
+    }
+  ]
+}

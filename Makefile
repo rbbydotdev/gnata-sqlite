@@ -1,4 +1,4 @@
-.PHONY: all build test wasm extension editor playground website clean publish
+.PHONY: all build test wasm extension editor playground website clean publish bench bench-quick
 
 # Build everything
 all: extension wasm editor
@@ -60,6 +60,16 @@ install:
 publish: editor react
 	cd editor/codemirror && npm publish
 	cd react && npm publish
+
+# Run benchmarks (requires extension to be built)
+bench: extension
+	cd benchmarks && pnpm install && pnpm run bench
+	cp benchmarks/results/benchmark-results.json website/public/benchmark-results.json
+
+# Quick benchmark (1 iteration, for development)
+bench-quick: extension
+	cd benchmarks && pnpm install && pnpm run bench:quick
+	cp benchmarks/results/benchmark-results.json website/public/benchmark-results.json
 
 # Clean build artifacts
 clean:

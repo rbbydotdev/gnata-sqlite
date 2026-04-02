@@ -1,0 +1,45 @@
+---
+title: Benchmarks
+description: Performance comparison of gnata-sqlite JSONata functions against equivalent pure SQL queries
+---
+
+# Benchmarks
+
+Performance comparison of gnata-sqlite JSONata functions against equivalent pure SQL queries, measured on native SQLite with the compiled C-shared extension. All timings are wall-clock times from the `sqlite3` built-in `.timer` facility.
+
+<BenchmarkTable />
+
+## Methodology
+
+- Each query executes against a fresh in-memory SQLite database
+- Data is generated using `WITH RECURSIVE` + `json_object()` directly in SQL
+- Each query runs multiple iterations; the **median** is reported
+- The gnata extension loads as a native shared library (`.dylib` / `.so`), not WASM
+- Timings capture only the query execution, not data setup
+- A **ratio** below 1.0 means gnata is faster than the SQL equivalent
+
+## Categories
+
+### Scalar: `jsonata()` vs `json_extract()`
+
+Per-row evaluation. The gnata function compiles and caches the JSONata expression, then evaluates it against each row's JSON column. The SQL equivalent uses SQLite's built-in `json_extract()` with path syntax.
+
+### Aggregate: `jsonata_query()` vs SQL aggregates
+
+Streaming aggregation. `jsonata_query()` decomposes expressions into streaming accumulators — `$sum`, `$count`, `$max`, `$min`, `$average` all operate in O(1) memory. See the [query planner](/docs/explanation/query-planner) for details on this optimization.
+
+### Table-valued: `jsonata_each()` vs `json_each()`
+
+Array expansion. `jsonata_each()` evaluates a JSONata expression per row and expands the result into virtual table rows, competing with the `json_each()` + `json_extract()` pattern.
+
+### Complex aggregates
+
+Advanced patterns combining accumulation and streaming: `COUNT DISTINCT`, `GROUP BY + SUM`, `TOP N` sorting, flatten + deduplicate, sessionization, report object construction, and histogram bucketing.
+
+### Full report
+
+The showcase benchmark — a single `jsonata_query()` expression producing a complete report object with 5 metrics, compared against both a 5-subquery SQL approach and a hand-optimized single-scan `CASE` approach.
+
+### New functions
+
+gnata-specific utility functions: `$base64`, `$urlencode`, `$htmlescape`, `$csv`, the `$try`/default pattern, `jsonata_set`, and `jsonata_delete`.

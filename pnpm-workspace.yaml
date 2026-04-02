@@ -3,3 +3,4 @@ packages:
   - "react"
   - "playground"
   - "website"
+  - "benchmarks"
