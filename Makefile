@@ -56,10 +56,25 @@ website-build:
 install:
 	pnpm install
 
+# Stage WASM assets into the react package for distribution
+# Depends on wasm target; skip with `make stage-wasm-only` if files already exist.
+stage-wasm: wasm
+	cp gnata-lsp.wasm lsp-wasm_exec.js react/wasm/
+
+stage-wasm-only:
+	cp gnata-lsp.wasm lsp-wasm_exec.js react/wasm/
+
 # Build and publish npm packages
-publish: editor react
+publish: editor react stage-wasm
 	cd editor/codemirror && npm publish
 	cd react && npm publish
+
+# Bump version across all packages (usage: make bump v=0.2.0)
+bump:
+	@if [ -z "$(v)" ]; then echo "Usage: make bump v=0.2.0"; exit 1; fi
+	cd editor/codemirror && npm version $(v) --no-git-tag-version
+	cd react && npm version $(v) --no-git-tag-version
+	@echo "Bumped all packages to $(v)"
 
 # Run benchmarks (requires extension to be built)
 bench: extension

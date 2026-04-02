@@ -19,7 +19,6 @@ This is what the finished editor looks like — try editing the expression:
 
 - Node.js 18+
 - React 18+ project
-- WASM files (built from source or downloaded from a release)
 
 ## Step 1: Install
 
@@ -27,45 +26,40 @@ This is what the finished editor looks like — try editing the expression:
 npm install @gnata-sqlite/react
 ```
 
-## Step 2: Serve the WASM files
+## Step 2: Copy LSP WASM to public
 
-Copy to `public/`:
+The package ships pre-built WASM binaries for the editor LSP (autocomplete, diagnostics, hover). Copy them to your app's public directory:
 
 ```bash
-make wasm
-cp gnata.wasm gnata-lsp.wasm wasm_exec.js lsp-wasm_exec.js public/
+npx @gnata-sqlite/react setup ./public
 ```
 
-## Step 3: Full playground in one component
+This copies `gnata-lsp.wasm` (126KB) and `lsp-wasm_exec.js` (16KB) into `public/`.
+
+## Step 3: Editor with full language support
+
+The `useJsonataLsp` hook loads the LSP WASM automatically — no configuration needed:
 
 ```tsx
-import { JsonataPlayground, useJsonataWasm } from '@gnata-sqlite/react'
-
-const sampleData = JSON.stringify({
-  Account: {
-    Name: "Firefly",
-    Order: [
-      { OrderID: "order103", Product: [
-        { Name: "Bowler Hat", Price: 34.45, Quantity: 2 },
-        { Name: "Trilby hat", Price: 21.67, Quantity: 1 },
-      ]},
-    ],
-  },
-}, null, 2)
+import { JsonataEditor, useJsonataLsp, useJsonataSchema } from '@gnata-sqlite/react'
+import { useState } from 'react'
 
 export default function App() {
+  const [expression, setExpression] = useState('Account.Name')
+  const [inputJson] = useState('{"Account":{"Name":"Firefly"}}')
+
+  const lsp = useJsonataLsp()
+  const schema = useJsonataSchema(inputJson)
+
   return (
-    <JsonataPlayground
-      defaultExpression="$sum(Account.Order.Product.(Price * Quantity))"
-      defaultInput={sampleData}
-      wasmOptions={{
-        evalWasmUrl: '/gnata.wasm',
-        evalExecUrl: '/wasm_exec.js',
-        lspWasmUrl: '/gnata-lsp.wasm',
-        lspExecUrl: '/lsp-wasm_exec.js',
-      }}
+    <JsonataEditor
+      value={expression}
+      onChange={setExpression}
+      schema={schema}
+      gnataDiagnostics={lsp.gnataDiagnostics}
+      gnataCompletions={lsp.gnataCompletions}
+      gnataHover={lsp.gnataHover}
       theme="dark"
-      height={400}
     />
   )
 }
@@ -76,7 +70,7 @@ export default function App() {
 ```tsx
 import {
   JsonataEditor, JsonataInput, JsonataResult,
-  useJsonataWasm, useJsonataEval, useJsonataSchema,
+  useJsonataLsp, useJsonataSchema,
 } from '@gnata-sqlite/react'
 import { useState } from 'react'
 
@@ -84,11 +78,7 @@ export default function CustomEditor() {
   const [expression, setExpression] = useState('Account.Name')
   const [inputJson, setInputJson] = useState('{"Account":{"Name":"Firefly"}}')
 
-  const wasm = useJsonataWasm({
-    evalWasmUrl: '/gnata.wasm', evalExecUrl: '/wasm_exec.js',
-    lspWasmUrl: '/gnata-lsp.wasm', lspExecUrl: '/lsp-wasm_exec.js',
-  })
-  const { result, error, timing } = useJsonataEval(expression, inputJson, wasm.gnataEval)
+  const lsp = useJsonataLsp()
   const schema = useJsonataSchema(inputJson)
 
   return (
@@ -96,38 +86,51 @@ export default function CustomEditor() {
       <JsonataEditor
         value={expression} onChange={setExpression}
         schema={schema}
-        gnataEval={wasm.gnataEval}
-        gnataDiagnostics={wasm.gnataDiagnostics}
-        gnataCompletions={wasm.gnataCompletions}
-        gnataHover={wasm.gnataHover}
+        gnataDiagnostics={lsp.gnataDiagnostics}
+        gnataCompletions={lsp.gnataCompletions}
+        gnataHover={lsp.gnataHover}
         theme="dark"
         getInputJson={() => inputJson}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <JsonataInput value={inputJson} onChange={setInputJson} theme="dark" />
-        <JsonataResult value={result} error={error} timing={timing} theme="dark" />
-      </div>
+      <JsonataInput value={inputJson} onChange={setInputJson} theme="dark" />
     </div>
   )
 }
 ```
 
-## Step 5: Hooks only (no components)
+## Step 5: Client-side evaluation (optional)
+
+For the rare case where evaluation must run in the browser, load the full eval engine (~5.3MB). This is opt-in — most apps evaluate server-side.
 
 ```tsx
-import { useJsonataWasm, useJsonataEval, useJsonataSchema } from '@gnata-sqlite/react'
-import { useState } from 'react'
+import {
+  JsonataPlayground,
+  useJsonataWasm, useJsonataEval, useJsonataSchema,
+} from '@gnata-sqlite/react'
 
-function useMyEditor() {
-  const [expr, setExpr] = useState('')
-  const [input, setInput] = useState('{}')
+// Evaluation engine must be built from source and served separately:
+//   make wasm
+//   cp gnata.wasm wasm_exec.js public/
+const wasm = useJsonataWasm({
+  evalWasmUrl: '/gnata.wasm',
+  evalExecUrl: '/wasm_exec.js',
+})
+const { result, error, timing } = useJsonataEval(expr, inputJson, wasm.gnataEval)
+```
 
-  const wasm = useJsonataWasm({ evalWasmUrl: '/gnata.wasm', evalExecUrl: '/wasm_exec.js' })
-  const { result, error, timing } = useJsonataEval(expr, input, wasm.gnataEval)
-  const schema = useJsonataSchema(input)
+Or use the all-in-one playground component:
 
-  return { expr, setExpr, input, setInput, result, error, timing, schema, wasm }
-}
+```tsx
+<JsonataPlayground
+  defaultExpression="$sum(Account.Order.Product.(Price * Quantity))"
+  defaultInput={sampleData}
+  wasmOptions={{
+    evalWasmUrl: '/gnata.wasm',
+    evalExecUrl: '/wasm_exec.js',
+  }}
+  theme="dark"
+  height={400}
+/>
 ```
 
 ## Step 6: Syntax highlighting only (no WASM)

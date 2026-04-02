@@ -1,6 +1,8 @@
 // Hooks
 export {
   useJsonataWasm,
+  LSP_WASM_DEFAULT_URL,
+  LSP_EXEC_DEFAULT_URL,
   type UseJsonataWasmOptions,
   type UseJsonataLspOptions,
   type WasmState,

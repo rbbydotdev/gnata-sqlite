@@ -19,7 +19,9 @@ function loadScript(url) {
     document.head.appendChild(script);
   });
 }
-function useJsonataWasm(options) {
+var LSP_WASM_DEFAULT_URL = "/gnata-lsp.wasm";
+var LSP_EXEC_DEFAULT_URL = "/lsp-wasm_exec.js";
+function useJsonataWasm(options = {}) {
   const [state, setState] = useState({
     isReady: false,
     isLspReady: false,
@@ -98,14 +100,15 @@ function useJsonataWasm(options) {
       return { gnataDiagnostics, gnataCompletions, gnataHover };
     }
     async function loadLsp() {
-      if (!options.lspWasmUrl || !options.lspExecUrl) return;
+      const lspWasmUrl = options.lspWasmUrl ?? LSP_WASM_DEFAULT_URL;
+      const lspExecUrl = options.lspExecUrl ?? LSP_EXEC_DEFAULT_URL;
       try {
         if (typeof window._gnataDiagnostics === "function") {
           if (cancelled) return;
           setState((prev) => ({ ...prev, isLspReady: true, ...makeLspFns() }));
           return;
         }
-        if (document.querySelector(`script[src="${options.lspExecUrl}"]`)) {
+        if (document.querySelector(`script[src="${lspExecUrl}"]`)) {
           const ready = await waitForGlobal("_gnataDiagnostics");
           if (cancelled) return;
           if (ready) {
@@ -114,11 +117,11 @@ function useJsonataWasm(options) {
           }
         }
         const StdGo = window.Go;
-        await loadScript(options.lspExecUrl);
+        await loadScript(lspExecUrl);
         const TinyGo = window.Go;
         window.Go = StdGo;
         const lspGo = new TinyGo();
-        const lspResp = await fetch(options.lspWasmUrl);
+        const lspResp = await fetch(lspWasmUrl);
         const lspResult = await WebAssembly.instantiateStreaming(lspResp, lspGo.importObject);
         lspGo.run(lspResult.instance);
         if (cancelled) return;
@@ -136,7 +139,7 @@ function useJsonataWasm(options) {
 }
 
 // src/hooks/use-jsonata-lsp.ts
-function useJsonataLsp(options) {
+function useJsonataLsp(options = {}) {
   return useJsonataWasm({
     lspWasmUrl: options.lspWasmUrl,
     lspExecUrl: options.lspExecUrl
@@ -1250,6 +1253,8 @@ export {
   JsonataInput,
   JsonataPlayground,
   JsonataResult,
+  LSP_EXEC_DEFAULT_URL,
+  LSP_WASM_DEFAULT_URL,
   allKeysFromJson,
   buildSchema,
   collectKeys,

@@ -126,12 +126,22 @@ function pad(s: string, len: number): string {
 
 // ── Output types ────────────────────────────────────────────────
 
+interface VariantResult {
+  label: string;
+  timing: TimingStats;
+  ratio: number | null;
+  sql: string;
+}
+
 interface TestResult {
   name: string;
   rows: number;
+  gnataSQL: string;
+  nativeSQL: string | null;
   gnata: TimingStats;
   native: TimingStats | null;
   ratio: number | null;
+  variants?: VariantResult[];
 }
 
 interface SuiteResult {
@@ -216,12 +226,31 @@ function main() {
             ? round(gnataStats.median / nativeStats.median)
             : null;
 
+        // Run additional variants (optimized SQL alternatives)
+        let variants: VariantResult[] | undefined;
+        if (test.nativeVariants?.length) {
+          variants = [];
+          for (const v of test.nativeVariants) {
+            const vStats = computeStats(
+              runN(suite.setupSQL, v.sql, ITERATIONS)
+            );
+            const vRatio =
+              vStats.median > 0
+                ? round(gnataStats.median / vStats.median)
+                : null;
+            variants.push({ label: v.label, timing: vStats, ratio: vRatio, sql: v.sql });
+          }
+        }
+
         testResults.push({
           name: test.name,
           rows: test.rows,
+          gnataSQL: test.gnataSQL,
+          nativeSQL: test.nativeSQL,
           gnata: gnataStats,
           native: nativeStats,
           ratio,
+          ...(variants ? { variants } : {}),
         });
 
         // Print inline result
@@ -229,6 +258,14 @@ function main() {
         const nStr = nativeStats ? fmtMs(nativeStats.median) : '—';
         const rStr = ratio !== null && isFinite(ratio) ? `${ratio.toFixed(2)}x` : '—';
         console.log(`gnata: ${pad(gStr, 10)} sql: ${pad(nStr, 10)} ratio: ${rStr}`);
+
+        if (variants) {
+          for (const v of variants) {
+            const vStr = fmtMs(v.timing.median);
+            const vrStr = v.ratio !== null && isFinite(v.ratio) ? `${v.ratio.toFixed(2)}x` : '—';
+            console.log(`    ${pad(v.label, 40)} sql: ${pad(vStr, 10)} ratio: ${vrStr}`);
+          }
+        }
       } catch (err) {
         console.log(`FAILED: ${err instanceof Error ? err.message.split('\n')[0] : err}`);
       }

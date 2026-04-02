@@ -7,22 +7,42 @@ description: Complete API reference for @gnata-sqlite/react — hooks, component
 
 ```bash
 npm install @gnata-sqlite/react
+npx @gnata-sqlite/react setup ./public
 ```
 
 ---
 
 ## Hooks
 
-### `useJsonataWasm(options)`
+### `useJsonataLsp(options?)`
 
-Loads the WASM modules. Call once, pass the result to components and other hooks.
+Loads the LSP WASM module for editor features (diagnostics, autocomplete, hover). Works with zero configuration after running the setup command above.
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `evalWasmUrl` | `string` | no | URL to `gnata.wasm` (optional for editor-only mode) |
-| `evalExecUrl` | `string` | no | URL to `wasm_exec.js` (optional for editor-only mode) |
-| `lspWasmUrl` | `string` | no | URL to `gnata-lsp.wasm` |
-| `lspExecUrl` | `string` | no | URL to `lsp-wasm_exec.js` |
+```tsx
+const lsp = useJsonataLsp()
+// or with custom URLs:
+const lsp = useJsonataLsp({ lspWasmUrl: '/custom/gnata-lsp.wasm', lspExecUrl: '/custom/lsp-wasm_exec.js' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `lspWasmUrl` | `string` | `'/gnata-lsp.wasm'` | URL to `gnata-lsp.wasm` |
+| `lspExecUrl` | `string` | `'/lsp-wasm_exec.js'` | URL to `lsp-wasm_exec.js` |
+
+**Returns `WasmState`** (see below).
+
+---
+
+### `useJsonataWasm(options?)`
+
+Full WASM loader — loads LSP by default, plus the optional eval engine. Use `useJsonataLsp` for the common case; use this hook only when client-side evaluation is needed.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `evalWasmUrl` | `string` | — | URL to `gnata.wasm` (opt-in, ~5.3MB) |
+| `evalExecUrl` | `string` | — | URL to `wasm_exec.js` (required with evalWasmUrl) |
+| `lspWasmUrl` | `string` | `'/gnata-lsp.wasm'` | URL to `gnata-lsp.wasm` |
+| `lspExecUrl` | `string` | `'/lsp-wasm_exec.js'` | URL to `lsp-wasm_exec.js` |
 
 **Returns `WasmState`:**
 
@@ -51,6 +71,7 @@ Evaluates an expression with debouncing (default 300ms).
 | `debounceMs` | `number` | Optional debounce delay in ms (default 300) |
 
 ```tsx
+// Requires the eval engine (opt-in, build from source)
 const wasm = useJsonataWasm({ evalWasmUrl: '/gnata.wasm', evalExecUrl: '/wasm_exec.js' })
 const { result, error, isSuccess, timing, timingMs, evaluate } =
   useJsonataEval(expression, inputJson, wasm.gnataEval)
@@ -103,9 +124,9 @@ Low-level hook creating a CodeMirror 6 `EditorView`.
 
 ---
 
-### `useJsonataLsp(options: UseJsonataLspOptions)`
+### `useJsonataLsp(options?)`
 
-Convenience hook for editor-only mode — sets up LSP features (diagnostics, autocomplete, hover) without requiring an eval WASM module. Useful when building an expression editor that does not need live evaluation.
+Documented above — this is the recommended hook for most use cases.
 
 ---
 

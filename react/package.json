@@ -1,6 +1,6 @@
 {
   "name": "@gnata-sqlite/react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Composable React widget for the gnata JSONata editor with WASM LSP support",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,8 +13,13 @@
     },
     "./tooltips.css": "./tooltips.css"
   },
+  "bin": {
+    "@gnata-sqlite/react": "./bin/setup.mjs"
+  },
   "files": [
     "dist",
+    "bin",
+    "wasm",
     "tooltips.css"
   ],
   "scripts": {

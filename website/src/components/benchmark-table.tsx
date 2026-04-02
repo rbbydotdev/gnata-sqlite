@@ -1,10 +1,19 @@
 'use client';
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
+import { createHighlighter, type Highlighter } from 'shiki';
+import { tokyoNightDark } from '@/lib/tokyo-night-dark';
+import { tokyoNightLight } from '@/lib/tokyo-night-light';
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-// ── Theme (matches run-example.tsx pattern) ─────────────────────
+// ── Theme ───────────────────────────────────────────────────────
 
 function subscribeToTheme(cb: () => void) {
   const observer = new MutationObserver(cb);
@@ -24,7 +33,33 @@ function useTheme(): 'dark' | 'light' {
   return useSyncExternalStore(subscribeToTheme, getThemeSnapshot, () => 'dark');
 }
 
-// ── Types (matching JSON output from benchmarks/run.ts) ─────────
+// ── Shiki highlighter (singleton) ───────────────────────────────
+
+let _highlighter: Highlighter | null = null;
+let _highlighterPromise: Promise<Highlighter> | null = null;
+
+function getHighlighter(): Promise<Highlighter> {
+  if (_highlighter) return Promise.resolve(_highlighter);
+  if (_highlighterPromise) return _highlighterPromise;
+  _highlighterPromise = createHighlighter({
+    themes: [tokyoNightDark, tokyoNightLight],
+    langs: ['sql'],
+  }).then((h) => {
+    _highlighter = h;
+    return h;
+  });
+  return _highlighterPromise;
+}
+
+function useHighlighter() {
+  const [hl, setHl] = useState<Highlighter | null>(_highlighter);
+  useEffect(() => {
+    if (!hl) getHighlighter().then(setHl);
+  }, [hl]);
+  return hl;
+}
+
+// ── Types ───────────────────────────────────────────────────────
 
 interface TimingStats {
   median: number;
@@ -34,12 +69,22 @@ interface TimingStats {
   runs: number[];
 }
 
+interface VariantResult {
+  label: string;
+  timing: TimingStats;
+  ratio: number | null;
+  sql: string;
+}
+
 interface TestResult {
   name: string;
   rows: number;
+  gnataSQL: string;
+  nativeSQL: string | null;
   gnata: TimingStats;
   native: TimingStats | null;
   ratio: number | null;
+  variants?: VariantResult[];
 }
 
 interface SuiteResult {
@@ -72,12 +117,11 @@ function fmtRows(n: number): string {
   return String(n);
 }
 
-function ratioColor(ratio: number | null, theme: 'dark' | 'light'): string {
-  if (ratio === null || !isFinite(ratio)) return theme === 'dark' ? '#565f89' : '#848cb5';
-  if (ratio < 1) return theme === 'dark' ? '#9ece6a' : '#587539';
-  if (ratio < 1.5) return theme === 'dark' ? '#9ece6a' : '#587539';
-  if (ratio < 3) return theme === 'dark' ? '#e0af68' : '#8a5d00';
-  return theme === 'dark' ? '#f7768e' : '#c53b53';
+function ratioColor(ratio: number | null, isDark: boolean): string {
+  if (ratio === null || !isFinite(ratio)) return isDark ? '#565f89' : '#848cb5';
+  if (ratio < 1.5) return isDark ? '#9ece6a' : '#587539';
+  if (ratio < 3) return isDark ? '#e0af68' : '#8a5d00';
+  return isDark ? '#f7768e' : '#c53b53';
 }
 
 function ratioLabel(ratio: number | null): string {
@@ -85,7 +129,130 @@ function ratioLabel(ratio: number | null): string {
   return `${ratio.toFixed(2)}x`;
 }
 
-// ── Components ──────────────────────────────────────────────────
+// ── Highlighted SQL Pane ────────────────────────────────────────
+
+function SqlPane({
+  title,
+  sql,
+  timing,
+  hl,
+  isDark,
+}: {
+  title: string;
+  sql: string;
+  timing: string;
+  hl: Highlighter | null;
+  isDark: boolean;
+}) {
+  // Use dual-theme mode so shiki sets --shiki-dark / --shiki-light CSS vars.
+  // Fumadocs CSS then picks the right one based on html.dark class.
+  const html = hl
+    ? hl.codeToHtml(sql.trim(), {
+        lang: 'sql',
+        themes: { dark: 'tokyo-night-custom', light: 'tokyo-night-light' },
+        defaultColor: false,
+      })
+    : null;
+
+  const borderColor = isDark ? '#292e42' : '#c4c8da';
+  const surfaceBg = isDark ? '#1f2335' : '#f5f5f7';
+  const codeBg = isDark ? '#1a1b26' : '#e1e2e7';
+  const mutedColor = isDark ? '#565f89' : '#848cb5';
+  const accentColor = isDark ? '#7aa2f7' : '#2e7de9';
+  const textColor = isDark ? '#a9b1d6' : '#3b4261';
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div
+        className="flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide"
+        style={{ background: surfaceBg, border: `1px solid ${borderColor}`, borderBottom: 'none', borderRadius: '6px 6px 0 0' }}
+      >
+        <span style={{ color: mutedColor }}>{title}</span>
+        <span className="font-mono text-xs font-semibold" style={{ color: accentColor }}>{timing}</span>
+      </div>
+      <div
+        style={{ border: `1px solid ${borderColor}`, borderRadius: '0 0 6px 6px', overflow: 'auto' }}
+      >
+        {html ? (
+          <div
+            className="bench-shiki"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <pre
+            className="m-0 p-3 font-mono text-xs leading-relaxed"
+            style={{ background: codeBg, color: textColor }}
+          >
+            <code>{sql.trim()}</code>
+          </pre>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Test Detail (accordion body) ────────────────────────────────
+
+function TestDetail({
+  test,
+  hl,
+  isDark,
+}: {
+  test: TestResult;
+  hl: Highlighter | null;
+  isDark: boolean;
+}) {
+  const bgColor = isDark ? '#16161e' : '#e1e2e7';
+  const borderColor = isDark ? '#292e42' : '#c4c8da';
+  const mutedColor = isDark ? '#565f89' : '#848cb5';
+
+  return (
+    <div
+      className="flex flex-wrap gap-3 p-3"
+      style={{ background: bgColor, borderTop: `1px solid ${borderColor}` }}
+    >
+      <div className="flex min-w-[280px] flex-1 flex-col gap-3">
+        <SqlPane
+          title="gnata-sqlite"
+          sql={test.gnataSQL}
+          timing={fmtMs(test.gnata.median)}
+          hl={hl}
+          isDark={isDark}
+        />
+      </div>
+      <div className="flex min-w-[280px] flex-1 flex-col gap-3">
+        {test.nativeSQL ? (
+          <SqlPane
+            title="SQLite"
+            sql={test.nativeSQL}
+            timing={test.native ? fmtMs(test.native.median) : '—'}
+            hl={hl}
+            isDark={isDark}
+          />
+        ) : (
+          <div
+            className="flex flex-1 items-center justify-center rounded-md p-6 text-sm italic"
+            style={{ color: mutedColor, border: `1px dashed ${borderColor}` }}
+          >
+            No native SQL equivalent
+          </div>
+        )}
+        {test.variants?.map((v) => (
+          <SqlPane
+            key={v.label}
+            title={v.label}
+            sql={v.sql}
+            timing={fmtMs(v.timing.median)}
+            hl={hl}
+            isDark={isDark}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Suite Section ───────────────────────────────────────────────
 
 function SuiteSection({
   suite,
@@ -97,16 +264,16 @@ function SuiteSection({
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const hl = useHighlighter();
   const isDark = theme === 'dark';
-
   const borderColor = isDark ? '#292e42' : '#c4c8da';
-  const surfaceColor = isDark ? '#1f2335' : '#f5f5f7';
   const headerBg = isDark ? '#1a1b26' : '#e8e9ed';
+  const surfaceBg = isDark ? '#1f2335' : '#f5f5f7';
   const mutedColor = isDark ? '#565f89' : '#848cb5';
   const textColor = isDark ? '#a9b1d6' : '#3b4261';
-  const headText = isDark ? '#c0caf5' : '#1a1b26';
+  const headColor = isDark ? '#c0caf5' : '#1a1b26';
+  const hoverBg = isDark ? 'rgba(122,162,247,0.06)' : 'rgba(46,125,233,0.06)';
 
-  // Compute suite average ratio (only paired tests)
   const paired = suite.tests.filter((t) => t.ratio !== null && isFinite(t.ratio!));
   const avgRatio =
     paired.length > 0
@@ -115,44 +282,24 @@ function SuiteSection({
 
   return (
     <div
-      style={{
-        border: `1px solid ${borderColor}`,
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: 16,
-      }}
+      className="mb-4 overflow-hidden rounded-lg"
+      style={{ border: `1px solid ${borderColor}` }}
     >
+      {/* Suite header */}
       <button
         onClick={() => setOpen(!open)}
         type="button"
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 16px',
-          background: headerBg,
-          border: 'none',
-          cursor: 'pointer',
-          color: headText,
-          fontSize: 15,
-          fontWeight: 600,
-          textAlign: 'left',
-          fontFamily: 'inherit',
-        }}
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left text-[15px] font-semibold"
+        style={{ background: headerBg, color: headColor, border: 'none', fontFamily: 'inherit' }}
       >
         <span>
-          <span style={{ marginRight: 8 }}>{open ? '▾' : '▸'}</span>
+          <span className="mr-2">{open ? '▾' : '▸'}</span>
           {suite.category}
         </span>
         {avgRatio !== null && (
           <span
-            style={{
-              fontSize: 13,
-              fontWeight: 500,
-              color: ratioColor(avgRatio, theme),
-              fontFamily: 'var(--font-mono, monospace)',
-            }}
+            className="font-mono text-[13px] font-medium"
+            style={{ color: ratioColor(avgRatio, isDark) }}
           >
             avg {avgRatio.toFixed(2)}x
           </span>
@@ -160,71 +307,97 @@ function SuiteSection({
       </button>
 
       {open && (
-        <div style={{ overflowX: 'auto' }}>
-          <table
+        <>
+          {/* Column headers */}
+          <div
+            className="grid font-mono text-[11px] font-medium uppercase tracking-wide"
             style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: 13,
-              fontFamily: 'var(--font-mono, monospace)',
+              gridTemplateColumns: '1fr 50px 70px 70px 60px',
+              padding: '8px 16px',
+              background: surfaceBg,
+              color: mutedColor,
             }}
           >
-            <thead>
-              <tr
-                style={{
-                  background: surfaceColor,
-                  color: mutedColor,
-                  textAlign: 'left',
-                  fontSize: 11,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
+            <span>Test</span>
+            <span className="text-right">Rows</span>
+            <span className="text-right">gnata</span>
+            <span className="text-right">SQL</span>
+            <span className="text-right">Ratio</span>
+          </div>
+
+          <Accordion type="single" collapsible>
+            {suite.tests.map((test) => (
+              <AccordionItem
+                key={test.name}
+                value={test.name}
+                className="border-0"
+                style={{ borderTop: `1px solid ${borderColor}` }}
               >
-                <th style={{ padding: '8px 16px', fontWeight: 500 }}>Test</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500, textAlign: 'right' }}>Rows</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500, textAlign: 'right' }}>gnata</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500, textAlign: 'right' }}>SQL</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500, textAlign: 'right' }}>Ratio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {suite.tests.map((test) => (
-                <tr
-                  key={test.name}
+                <AccordionTrigger
+                  className="grid w-full cursor-pointer px-4 py-2 font-mono text-[13px] hover:no-underline"
                   style={{
-                    borderTop: `1px solid ${borderColor}`,
+                    gridTemplateColumns: '1fr 50px 70px 70px 60px',
                     color: textColor,
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = hoverBg;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '';
+                  }}
                 >
-                  <td style={{ padding: '8px 16px' }}>{test.name}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', color: mutedColor }}>
+                  <span className="text-left">{test.name}</span>
+                  <span className="text-right" style={{ color: mutedColor }}>
                     {fmtRows(test.rows)}
-                  </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    {fmtMs(test.gnata.median)}
-                  </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                  </span>
+                  <span className="text-right">{fmtMs(test.gnata.median)}</span>
+                  <span className="text-right">
                     {test.native ? fmtMs(test.native.median) : '—'}
-                  </td>
-                  <td
-                    style={{
-                      padding: '8px 12px',
-                      textAlign: 'right',
-                      fontWeight: 600,
-                      color: ratioColor(test.ratio, theme),
-                    }}
+                  </span>
+                  <span
+                    className="text-right font-semibold"
+                    style={{ color: ratioColor(test.ratio, isDark) }}
                   >
                     {ratioLabel(test.ratio)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="pb-0">
+                  {/* Variant sub-rows */}
+                  {test.variants?.map((v) => (
+                    <div
+                      key={v.label}
+                      className="grid font-mono text-xs italic"
+                      style={{
+                        gridTemplateColumns: '1fr 50px 70px 70px 60px',
+                        padding: '6px 16px 6px 32px',
+                        borderTop: `1px solid ${borderColor}`,
+                        color: mutedColor,
+                      }}
+                    >
+                      <span>↳ vs {v.label}</span>
+                      <span />
+                      <span />
+                      <span className="text-right">{fmtMs(v.timing.median)}</span>
+                      <span
+                        className="text-right font-semibold not-italic"
+                        style={{ color: ratioColor(v.ratio, isDark) }}
+                      >
+                        {ratioLabel(v.ratio)}
+                      </span>
+                    </div>
+                  ))}
+                  <TestDetail test={test} hl={hl} isDark={isDark} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </>
       )}
     </div>
   );
 }
+
+// ── Root Component ──────────────────────────────────────────────
 
 export function BenchmarkTable() {
   const theme = useTheme();
@@ -257,25 +430,37 @@ export function BenchmarkTable() {
   }
 
   return (
-    <div>
-      <p style={{ fontSize: 13, color: mutedColor, marginBottom: 16 }}>
+    <div className="not-prose">
+      <p className="mb-4 text-[13px]" style={{ color: mutedColor }}>
         {data.metadata.platform} &middot; SQLite {data.metadata.sqliteVersion} &middot;{' '}
-        {data.metadata.iterations} iterations &middot;{' '}
+        {data.metadata.iterations} iteration{data.metadata.iterations !== 1 ? 's' : ''} &middot;{' '}
         {new Date(data.metadata.timestamp).toLocaleDateString()}
       </p>
 
       {data.suites.map((suite, i) => (
-        <SuiteSection
-          key={suite.name}
-          suite={suite}
-          theme={theme}
-          defaultOpen={i === 0}
-        />
+        <SuiteSection key={suite.name} suite={suite} theme={theme} defaultOpen={i === 0} />
       ))}
 
-      <p style={{ fontSize: 12, color: mutedColor, marginTop: 8 }}>
-        Ratio = gnata time / SQL time. Values below 1.0 mean gnata is faster.
+      <p className="mt-2 text-xs" style={{ color: mutedColor }}>
+        Ratio = gnata time / SQL time. Values below 1.0 mean gnata is faster. Click a row to view
+        queries.
       </p>
+
+      <style>{`
+        .bench-shiki pre {
+          margin: 0 !important;
+          padding: 12px !important;
+          font-size: 12px !important;
+          line-height: 1.6 !important;
+          font-family: var(--font-mono, ui-monospace, monospace) !important;
+        }
+        .bench-shiki code,
+        .bench-shiki span {
+          font-family: var(--font-mono, ui-monospace, monospace) !important;
+        }
+        /* Dual-theme mode: shiki sets --shiki-dark / --shiki-light CSS vars
+           on each span. Fumadocs CSS picks the right one via html.dark selectors. */
+      `}</style>
     </div>
   );
 }

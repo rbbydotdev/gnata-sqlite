@@ -27,9 +27,9 @@ export interface UseJsonataWasmOptions {
   evalWasmUrl?: string;
   /** URL to wasm_exec.js (standard Go WASM runtime). Required if evalWasmUrl is given. */
   evalExecUrl?: string;
-  /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 61KB gzipped). Provides autocomplete, hover, diagnostics. */
+  /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 61KB gzipped). Provides autocomplete, hover, diagnostics. Defaults to '/gnata-lsp.wasm'. */
   lspWasmUrl?: string;
-  /** URL to lsp-wasm_exec.js (TinyGo WASM runtime). Required if lspWasmUrl is given. */
+  /** URL to lsp-wasm_exec.js (TinyGo WASM runtime). Required if lspWasmUrl is given. Defaults to '/lsp-wasm_exec.js'. */
   lspExecUrl?: string;
 }
 
@@ -38,10 +38,10 @@ export interface UseJsonataWasmOptions {
  * The most common use case: embed an expression editor, run evaluation on the backend.
  */
 export interface UseJsonataLspOptions {
-  /** URL to gnata-lsp.wasm */
-  lspWasmUrl: string;
-  /** URL to lsp-wasm_exec.js */
-  lspExecUrl: string;
+  /** URL to gnata-lsp.wasm. Defaults to '/gnata-lsp.wasm'. */
+  lspWasmUrl?: string;
+  /** URL to lsp-wasm_exec.js. Defaults to '/lsp-wasm_exec.js'. */
+  lspExecUrl?: string;
 }
 
 export interface WasmState {
@@ -101,7 +101,10 @@ function loadScript(url: string): Promise<void> {
  * Both are optional and loaded independently. The eval module is loaded first;
  * the LSP module is loaded in the background.
  */
-export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
+export const LSP_WASM_DEFAULT_URL = '/gnata-lsp.wasm';
+export const LSP_EXEC_DEFAULT_URL = '/lsp-wasm_exec.js';
+
+export function useJsonataWasm(options: UseJsonataWasmOptions = {}): WasmState {
   const [state, setState] = useState<WasmState>({
     isReady: false,
     isLspReady: false,
@@ -203,7 +206,8 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
     }
 
     async function loadLsp() {
-      if (!options.lspWasmUrl || !options.lspExecUrl) return;
+      const lspWasmUrl = options.lspWasmUrl ?? LSP_WASM_DEFAULT_URL;
+      const lspExecUrl = options.lspExecUrl ?? LSP_EXEC_DEFAULT_URL;
 
       try {
         // Check if LSP WASM is already loaded (StrictMode remount or HMR)
@@ -214,7 +218,7 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
         }
 
         // If a previous mount started loading LSP, wait for it
-        if (document.querySelector(`script[src="${options.lspExecUrl}"]`)) {
+        if (document.querySelector(`script[src="${lspExecUrl}"]`)) {
           const ready = await waitForGlobal('_gnataDiagnostics');
           if (cancelled) return;
           if (ready) {
@@ -226,14 +230,14 @@ export function useJsonataWasm(options: UseJsonataWasmOptions): WasmState {
         // Save the standard Go constructor before loading TinyGo's version
         const StdGo = window.Go;
 
-        await loadScript(options.lspExecUrl);
+        await loadScript(lspExecUrl);
 
         const TinyGo = window.Go;
         // Restore standard Go constructor
         window.Go = StdGo;
 
         const lspGo = new TinyGo();
-        const lspResp = await fetch(options.lspWasmUrl);
+        const lspResp = await fetch(lspWasmUrl);
         const lspResult = await WebAssembly.instantiateStreaming(lspResp, lspGo.importObject);
         lspGo.run(lspResult.instance);
 

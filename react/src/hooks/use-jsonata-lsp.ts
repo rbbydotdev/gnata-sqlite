@@ -6,11 +6,13 @@ import { useJsonataWasm, type UseJsonataLspOptions, type WasmState } from './use
  * The most common use case: embed a JSONata expression editor with autocomplete,
  * hover docs, and diagnostics. Evaluation runs on the backend, not in the browser.
  *
+ * Works with zero configuration after setup:
+ * ```bash
+ * npx @gnata-sqlite/react setup ./public
+ * ```
+ *
  * ```tsx
- * const lsp = useJsonataLsp({
- *   lspWasmUrl: '/gnata-lsp.wasm',
- *   lspExecUrl: '/lsp-wasm_exec.js',
- * });
+ * const lsp = useJsonataLsp();
  *
  * <JsonataEditor
  *   value={expression}
@@ -23,7 +25,7 @@ import { useJsonataWasm, type UseJsonataLspOptions, type WasmState } from './use
  *
  * No gnata.wasm (5.3MB) download needed. No eval in the browser.
  */
-export function useJsonataLsp(options: UseJsonataLspOptions): WasmState {
+export function useJsonataLsp(options: UseJsonataLspOptions = {}): WasmState {
   return useJsonataWasm({
     lspWasmUrl: options.lspWasmUrl,
     lspExecUrl: options.lspExecUrl,

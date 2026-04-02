@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2026-04-02T04:17:57.868Z",
+    "timestamp": "2026-04-02T04:52:09.259Z",
     "platform": "darwin-arm64",
     "sqliteVersion": "3.50.4",
     "iterations": 1
@@ -13,29 +13,33 @@
         {
           "name": "Simple field extraction",
           "rows": 100000,
+          "gnataSQL": "-- Dot-path navigation: extract top-level field\n-- Expression is compiled once, cached, then evaluated per row\nSELECT count(*) as n\nFROM events\nWHERE jsonata('action', data) = 'login';",
+          "nativeSQL": "-- SQLite built-in: json_extract with dollar-path syntax\n-- Each call parses the JSON and walks to the key\nSELECT count(*) as n\nFROM events\nWHERE json_extract(data, '$.action') = 'login';",
           "gnata": {
-            "median": 0.119,
-            "mean": 0.119,
-            "min": 0.119,
-            "max": 0.119,
+            "median": 0.063,
+            "mean": 0.063,
+            "min": 0.063,
+            "max": 0.063,
             "runs": [
-              0.119
+              0.063
             ]
           },
           "native": {
-            "median": 0.043,
-            "mean": 0.043,
-            "min": 0.043,
-            "max": 0.043,
+            "median": 0.039,
+            "mean": 0.039,
+            "min": 0.039,
+            "max": 0.039,
             "runs": [
-              0.043
+              0.039
             ]
           },
-          "ratio": 2.7674
+          "ratio": 1.6154
         },
         {
           "name": "Nested field extraction",
           "rows": 100000,
+          "gnataSQL": "-- Nested dot-path: reaches into metadata.region\n-- Uses GJSON fast-path for zero-copy extraction\nSELECT count(*) as n\nFROM events\nWHERE jsonata('metadata.region', data) = 'us-east';",
+          "nativeSQL": "-- Nested dollar-path: $.metadata.region\n-- Two levels of JSON parsing per row\nSELECT count(*) as n\nFROM events\nWHERE json_extract(data, '$.metadata.region') = 'us-east';",
           "gnata": {
             "median": 0.071,
             "mean": 0.071,
@@ -46,49 +50,28 @@
             ]
           },
           "native": {
-            "median": 0.043,
-            "mean": 0.043,
-            "min": 0.043,
-            "max": 0.043,
+            "median": 0.042,
+            "mean": 0.042,
+            "min": 0.042,
+            "max": 0.042,
             "runs": [
-              0.043
+              0.042
             ]
           },
-          "ratio": 1.6512
+          "ratio": 1.6905
         },
         {
           "name": "Numeric aggregation",
           "rows": 100000,
+          "gnataSQL": "-- Extract numeric field, let SQL handle the SUM\n-- gnata returns a number type, no casting needed\nSELECT sum(jsonata('amount', data)) as total\nFROM events;",
+          "nativeSQL": "-- json_extract returns TEXT for numbers in some cases\n-- SQLite coerces to numeric for sum()\nSELECT sum(json_extract(data, '$.amount')) as total\nFROM events;",
           "gnata": {
-            "median": 0.059,
-            "mean": 0.059,
-            "min": 0.059,
-            "max": 0.059,
+            "median": 0.057,
+            "mean": 0.057,
+            "min": 0.057,
+            "max": 0.057,
             "runs": [
-              0.059
-            ]
-          },
-          "native": {
-            "median": 0.043,
-            "mean": 0.043,
-            "min": 0.043,
-            "max": 0.043,
-            "runs": [
-              0.043
-            ]
-          },
-          "ratio": 1.3721
-        },
-        {
-          "name": "Multi-field access per row",
-          "rows": 100000,
-          "gnata": {
-            "median": 0.087,
-            "mean": 0.087,
-            "min": 0.087,
-            "max": 0.087,
-            "runs": [
-              0.087
+              0.057
             ]
           },
           "native": {
@@ -100,76 +83,107 @@
               0.044
             ]
           },
-          "ratio": 1.9773
+          "ratio": 1.2955
         },
         {
-          "name": "Conditional transform",
-          "rows": 10000,
+          "name": "Multi-field access per row",
+          "rows": 100000,
+          "gnataSQL": "-- Three separate jsonata() calls per row\n-- Each compiles once, caches, evaluates independently\nSELECT count(*) as n\nFROM events\nWHERE jsonata('action', data) = 'purchase'\n  AND jsonata('amount', data) > 100\n  AND jsonata('metadata.region', data) = 'us-east';",
+          "nativeSQL": "-- Three json_extract calls per row\n-- Each re-parses the full JSON document\nSELECT count(*) as n\nFROM events\nWHERE json_extract(data, '$.action') = 'purchase'\n  AND json_extract(data, '$.amount') > 100\n  AND json_extract(data, '$.metadata.region') = 'us-east';",
           "gnata": {
-            "median": 0.061,
-            "mean": 0.061,
-            "min": 0.061,
-            "max": 0.061,
+            "median": 0.086,
+            "mean": 0.086,
+            "min": 0.086,
+            "max": 0.086,
             "runs": [
-              0.061
+              0.086
             ]
           },
           "native": {
-            "median": 0.005,
-            "mean": 0.005,
-            "min": 0.005,
-            "max": 0.005,
+            "median": 0.043,
+            "mean": 0.043,
+            "min": 0.043,
+            "max": 0.043,
             "runs": [
-              0.005
-            ]
-          },
-          "ratio": 12.2
-        },
-        {
-          "name": "String transform ($uppercase)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.008,
-            "mean": 0.008,
-            "min": 0.008,
-            "max": 0.008,
-            "runs": [
-              0.008
-            ]
-          },
-          "native": {
-            "median": 0.004,
-            "mean": 0.004,
-            "min": 0.004,
-            "max": 0.004,
-            "runs": [
-              0.004
+              0.043
             ]
           },
           "ratio": 2
         },
         {
-          "name": "Full scan projection",
+          "name": "Conditional transform",
           "rows": 100000,
+          "gnataSQL": "-- Ternary expression evaluated inside JSONata\n-- Full expression: amount > 200 ? \"high\" : \"low\"\nSELECT count(*) as n\nFROM events\nWHERE jsonata('amount > 200 ? \"high\" : \"low\"', data) = 'high';",
+          "nativeSQL": "-- Equivalent requires SQL CASE expression\n-- Mixes json_extract with SQL control flow\nSELECT count(*) as n\nFROM events\nWHERE CASE WHEN json_extract(data, '$.amount') > 200\n  THEN 'high' ELSE 'low' END = 'high';",
           "gnata": {
-            "median": 0.07,
-            "mean": 0.07,
-            "min": 0.07,
-            "max": 0.07,
+            "median": 0.629,
+            "mean": 0.629,
+            "min": 0.629,
+            "max": 0.629,
             "runs": [
-              0.07
+              0.629
             ]
           },
           "native": {
-            "median": 0.047,
-            "mean": 0.047,
-            "min": 0.047,
-            "max": 0.047,
+            "median": 0.049,
+            "mean": 0.049,
+            "min": 0.049,
+            "max": 0.049,
             "runs": [
-              0.047
+              0.049
             ]
           },
-          "ratio": 1.4894
+          "ratio": 12.8367
+        },
+        {
+          "name": "String transform ($uppercase)",
+          "rows": 100000,
+          "gnataSQL": "-- Built-in $uppercase function applied to a field\n-- Expression compiled once, string transform per row\nSELECT count(*) as n\nFROM events\nWHERE jsonata('$uppercase(action)', data) = 'LOGIN';",
+          "nativeSQL": "-- SQL upper() wrapping json_extract\n-- Two function calls per row\nSELECT count(*) as n\nFROM events\nWHERE upper(json_extract(data, '$.action')) = 'LOGIN';",
+          "gnata": {
+            "median": 0.215,
+            "mean": 0.215,
+            "min": 0.215,
+            "max": 0.215,
+            "runs": [
+              0.215
+            ]
+          },
+          "native": {
+            "median": 0.103,
+            "mean": 0.103,
+            "min": 0.103,
+            "max": 0.103,
+            "runs": [
+              0.103
+            ]
+          },
+          "ratio": 2.0874
+        },
+        {
+          "name": "Full scan projection",
+          "rows": 100000,
+          "gnataSQL": "-- Extract a nested field from every row, measure total chars\n-- Tests throughput on a full table scan\nSELECT sum(length(jsonata('metadata.ip', data))) as total_chars\nFROM events;",
+          "nativeSQL": "-- Equivalent full scan with json_extract\n-- Baseline for per-row extraction overhead\nSELECT sum(length(json_extract(data, '$.metadata.ip'))) as total_chars\nFROM events;",
+          "gnata": {
+            "median": 0.172,
+            "mean": 0.172,
+            "min": 0.172,
+            "max": 0.172,
+            "runs": [
+              0.172
+            ]
+          },
+          "native": {
+            "median": 0.178,
+            "mean": 0.178,
+            "min": 0.178,
+            "max": 0.178,
+            "runs": [
+              0.178
+            ]
+          },
+          "ratio": 0.9663
         }
       ]
     },
@@ -180,36 +194,40 @@
         {
           "name": "SUM (streaming)",
           "rows": 100000,
+          "gnataSQL": "-- Streaming $sum: O(1) memory, one accumulator\n-- Query planner decomposes to a single streaming add\nSELECT jsonata_query('$sum(amount)', data) as total\nFROM events;",
+          "nativeSQL": "-- SQL sum() with json_extract per row\n-- Native aggregate, single pass\nSELECT sum(json_extract(data, '$.amount')) as total\nFROM events;",
           "gnata": {
-            "median": 0.046,
-            "mean": 0.046,
-            "min": 0.046,
-            "max": 0.046,
+            "median": 0.087,
+            "mean": 0.087,
+            "min": 0.087,
+            "max": 0.087,
             "runs": [
-              0.046
+              0.087
             ]
           },
           "native": {
-            "median": 0.032,
-            "mean": 0.032,
-            "min": 0.032,
-            "max": 0.032,
+            "median": 0.052,
+            "mean": 0.052,
+            "min": 0.052,
+            "max": 0.052,
             "runs": [
-              0.032
+              0.052
             ]
           },
-          "ratio": 1.4375
+          "ratio": 1.6731
         },
         {
           "name": "COUNT (streaming)",
           "rows": 100000,
+          "gnataSQL": "-- Streaming $count: O(1) memory, simple counter\n-- Planner recognizes $count() as a streaming accumulator\nSELECT jsonata_query('$count()', data) as n\nFROM events;",
+          "nativeSQL": "-- SQL count(*) does not need to read JSON at all\n-- Fastest possible: just counts rowids\nSELECT count(*) as n\nFROM events;",
           "gnata": {
-            "median": 0.03,
-            "mean": 0.03,
-            "min": 0.03,
-            "max": 0.03,
+            "median": 0.088,
+            "mean": 0.088,
+            "min": 0.088,
+            "max": 0.088,
             "runs": [
-              0.03
+              0.088
             ]
           },
           "native": {
@@ -226,36 +244,90 @@
         {
           "name": "MAX (streaming)",
           "rows": 100000,
+          "gnataSQL": "-- Streaming $max: O(1) memory, tracks running maximum\n-- Extracts amount per row via GJSON fast-path\nSELECT jsonata_query('$max(amount)', data) as m\nFROM events;",
+          "nativeSQL": "-- SQL max() with json_extract per row\n-- Native aggregate, single pass\nSELECT max(json_extract(data, '$.amount')) as m\nFROM events;",
           "gnata": {
-            "median": 0.044,
-            "mean": 0.044,
-            "min": 0.044,
-            "max": 0.044,
+            "median": 0.12,
+            "mean": 0.12,
+            "min": 0.12,
+            "max": 0.12,
             "runs": [
-              0.044
+              0.12
             ]
           },
           "native": {
-            "median": 0.032,
-            "mean": 0.032,
-            "min": 0.032,
-            "max": 0.032,
+            "median": 0.039,
+            "mean": 0.039,
+            "min": 0.039,
+            "max": 0.039,
             "runs": [
-              0.032
+              0.039
             ]
           },
-          "ratio": 1.375
+          "ratio": 3.0769
         },
         {
           "name": "AVERAGE (streaming)",
           "rows": 100000,
+          "gnataSQL": "-- Streaming $average: O(1) memory, tracks sum + count\n-- Final division done once after all rows\nSELECT jsonata_query('$average(amount)', data) as a\nFROM events;",
+          "nativeSQL": "-- SQL avg() with json_extract per row\n-- Native aggregate, single pass\nSELECT avg(json_extract(data, '$.amount')) as a\nFROM events;",
           "gnata": {
-            "median": 0.044,
-            "mean": 0.044,
-            "min": 0.044,
-            "max": 0.044,
+            "median": 0.2,
+            "mean": 0.2,
+            "min": 0.2,
+            "max": 0.2,
             "runs": [
-              0.044
+              0.2
+            ]
+          },
+          "native": {
+            "median": 0.077,
+            "mean": 0.077,
+            "min": 0.077,
+            "max": 0.077,
+            "runs": [
+              0.077
+            ]
+          },
+          "ratio": 2.5974
+        },
+        {
+          "name": "GROUP BY + SUM (streaming)",
+          "rows": 100000,
+          "gnataSQL": "-- jsonata_query inside GROUP BY\n-- Streaming $sum resets per group, O(1) memory per group\nSELECT json_extract(data, '$.region') as r,\n       jsonata_query('$sum(amount)', data) as total\nFROM events GROUP BY r;",
+          "nativeSQL": "-- SQL sum + GROUP BY with json_extract\n-- Two json_extract calls per row (region + amount)\nSELECT json_extract(data, '$.region') as r,\n       sum(json_extract(data, '$.amount')) as total\nFROM events GROUP BY r;",
+          "gnata": {
+            "median": 0.184,
+            "mean": 0.184,
+            "min": 0.184,
+            "max": 0.184,
+            "runs": [
+              0.184
+            ]
+          },
+          "native": {
+            "median": 0.284,
+            "mean": 0.284,
+            "min": 0.284,
+            "max": 0.284,
+            "runs": [
+              0.284
+            ]
+          },
+          "ratio": 0.6479
+        },
+        {
+          "name": "$sort (accumulate)",
+          "rows": 100000,
+          "gnataSQL": "-- Accumulate mode: $sort buffers all values in memory\n-- O(n) memory, then sorts and returns last element\nSELECT jsonata_query('$sort(amount)[0]', data) as top\nFROM events;",
+          "nativeSQL": "-- SQL max() is O(1) — no sort needed\n-- Much faster for this specific operation\nSELECT max(json_extract(data, '$.amount')) as top\nFROM events;",
+          "gnata": {
+            "median": 0.618,
+            "mean": 0.618,
+            "min": 0.618,
+            "max": 0.618,
+            "runs": [
+              0.618
             ]
           },
           "native": {
@@ -267,547 +339,13 @@
               0.032
             ]
           },
-          "ratio": 1.375
+          "ratio": 19.3125
         },
         {
-          "name": "GROUP BY + SUM (streaming)",
+          "name": "Complex expression (accumulate)",
           "rows": 100000,
-          "gnata": {
-            "median": 0.103,
-            "mean": 0.103,
-            "min": 0.103,
-            "max": 0.103,
-            "runs": [
-              0.103
-            ]
-          },
-          "native": {
-            "median": 0.092,
-            "mean": 0.092,
-            "min": 0.092,
-            "max": 0.092,
-            "runs": [
-              0.092
-            ]
-          },
-          "ratio": 1.1196
-        },
-        {
-          "name": "$sort (accumulate, 10k rows)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.04,
-            "mean": 0.04,
-            "min": 0.04,
-            "max": 0.04,
-            "runs": [
-              0.04
-            ]
-          },
-          "native": {
-            "median": 0.003,
-            "mean": 0.003,
-            "min": 0.003,
-            "max": 0.003,
-            "runs": [
-              0.003
-            ]
-          },
-          "ratio": 13.3333
-        },
-        {
-          "name": "Complex expression (accumulate, 1k rows)",
-          "rows": 1000,
-          "gnata": {
-            "median": 0.001,
-            "mean": 0.001,
-            "min": 0.001,
-            "max": 0.001,
-            "runs": [
-              0.001
-            ]
-          },
-          "native": null,
-          "ratio": null
-        }
-      ]
-    },
-    {
-      "name": "each",
-      "category": "jsonata_each() vs json_each()",
-      "tests": [
-        {
-          "name": "Expand tags array",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.016,
-            "mean": 0.016,
-            "min": 0.016,
-            "max": 0.016,
-            "runs": [
-              0.016
-            ]
-          },
-          "native": {
-            "median": 0.006,
-            "mean": 0.006,
-            "min": 0.006,
-            "max": 0.006,
-            "runs": [
-              0.006
-            ]
-          },
-          "ratio": 2.6667
-        },
-        {
-          "name": "Expand + filter (price > 100)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.095,
-            "mean": 0.095,
-            "min": 0.095,
-            "max": 0.095,
-            "runs": [
-              0.095
-            ]
-          },
-          "native": {
-            "median": 0.014,
-            "mean": 0.014,
-            "min": 0.014,
-            "max": 0.014,
-            "runs": [
-              0.014
-            ]
-          },
-          "ratio": 6.7857
-        },
-        {
-          "name": "Expand + transform (inline arithmetic)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.092,
-            "mean": 0.092,
-            "min": 0.092,
-            "max": 0.092,
-            "runs": [
-              0.092
-            ]
-          },
-          "native": {
-            "median": 0.019,
-            "mean": 0.019,
-            "min": 0.019,
-            "max": 0.019,
-            "runs": [
-              0.019
-            ]
-          },
-          "ratio": 4.8421
-        },
-        {
-          "name": "Flatten + deduplicate (DISTINCT)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.023,
-            "mean": 0.023,
-            "min": 0.023,
-            "max": 0.023,
-            "runs": [
-              0.023
-            ]
-          },
-          "native": {
-            "median": 0.008,
-            "mean": 0.008,
-            "min": 0.008,
-            "max": 0.008,
-            "runs": [
-              0.008
-            ]
-          },
-          "ratio": 2.875
-        },
-        {
-          "name": "GROUP BY on expanded elements",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.023,
-            "mean": 0.023,
-            "min": 0.023,
-            "max": 0.023,
-            "runs": [
-              0.023
-            ]
-          },
-          "native": {
-            "median": 0.01,
-            "mean": 0.01,
-            "min": 0.01,
-            "max": 0.01,
-            "runs": [
-              0.01
-            ]
-          },
-          "ratio": 2.3
-        },
-        {
-          "name": "Full scan expand (50k rows)",
-          "rows": 50000,
-          "gnata": {
-            "median": 0.076,
-            "mean": 0.076,
-            "min": 0.076,
-            "max": 0.076,
-            "runs": [
-              0.076
-            ]
-          },
-          "native": {
-            "median": 0.028,
-            "mean": 0.028,
-            "min": 0.028,
-            "max": 0.028,
-            "runs": [
-              0.028
-            ]
-          },
-          "ratio": 2.7143
-        }
-      ]
-    },
-    {
-      "name": "complex",
-      "category": "jsonata_query() vs complex SQL",
-      "tests": [
-        {
-          "name": "COUNT DISTINCT users",
-          "rows": 50000,
-          "gnata": {
-            "median": 0.023,
-            "mean": 0.023,
-            "min": 0.023,
-            "max": 0.023,
-            "runs": [
-              0.023
-            ]
-          },
-          "native": {
-            "median": 0.02,
-            "mean": 0.02,
-            "min": 0.02,
-            "max": 0.02,
-            "runs": [
-              0.02
-            ]
-          },
-          "ratio": 1.15
-        },
-        {
-          "name": "GROUP BY + SUM per-region revenue",
-          "rows": 50000,
-          "gnata": {
-            "median": 0.024,
-            "mean": 0.024,
-            "min": 0.024,
-            "max": 0.024,
-            "runs": [
-              0.024
-            ]
-          },
-          "native": {
-            "median": 0.022,
-            "mean": 0.022,
-            "min": 0.022,
-            "max": 0.022,
-            "runs": [
-              0.022
-            ]
-          },
-          "ratio": 1.0909
-        },
-        {
-          "name": "TOP N users by spend (accumulate)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.017,
-            "mean": 0.017,
-            "min": 0.017,
-            "max": 0.017,
-            "runs": [
-              0.017
-            ]
-          },
-          "native": {
-            "median": 0.005,
-            "mean": 0.005,
-            "min": 0.005,
-            "max": 0.005,
-            "runs": [
-              0.005
-            ]
-          },
-          "ratio": 3.4
-        },
-        {
-          "name": "Flatten + deduplicate tags (accumulate)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.445,
-            "mean": 0.445,
-            "min": 0.445,
-            "max": 0.445,
-            "runs": [
-              0.445
-            ]
-          },
-          "native": {
-            "median": 0.007,
-            "mean": 0.007,
-            "min": 0.007,
-            "max": 0.007,
-            "runs": [
-              0.007
-            ]
-          },
-          "ratio": 63.5714
-        },
-        {
-          "name": "Sessionize user journeys (accumulate)",
-          "rows": 5000,
-          "gnata": {
-            "median": 0.003,
-            "mean": 0.003,
-            "min": 0.003,
-            "max": 0.003,
-            "runs": [
-              0.003
-            ]
-          },
-          "native": {
-            "median": 0.004,
-            "mean": 0.004,
-            "min": 0.004,
-            "max": 0.004,
-            "runs": [
-              0.004
-            ]
-          },
-          "ratio": 0.75
-        },
-        {
-          "name": "Build report object (accumulate)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.008,
-            "mean": 0.008,
-            "min": 0.008,
-            "max": 0.008,
-            "runs": [
-              0.008
-            ]
-          },
-          "native": {
-            "median": 0.011,
-            "mean": 0.011,
-            "min": 0.011,
-            "max": 0.011,
-            "runs": [
-              0.011
-            ]
-          },
-          "ratio": 0.7273
-        },
-        {
-          "name": "Histogram bucketing (accumulate)",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.014,
-            "mean": 0.014,
-            "min": 0.014,
-            "max": 0.014,
-            "runs": [
-              0.014
-            ]
-          },
-          "native": {
-            "median": 0.004,
-            "mean": 0.004,
-            "min": 0.004,
-            "max": 0.004,
-            "runs": [
-              0.004
-            ]
-          },
-          "ratio": 3.5
-        },
-        {
-          "name": "Streaming $sum at scale",
-          "rows": 50000,
-          "gnata": {
-            "median": 0.023,
-            "mean": 0.023,
-            "min": 0.023,
-            "max": 0.023,
-            "runs": [
-              0.023
-            ]
-          },
-          "native": {
-            "median": 0.018,
-            "mean": 0.018,
-            "min": 0.018,
-            "max": 0.018,
-            "runs": [
-              0.018
-            ]
-          },
-          "ratio": 1.2778
-        }
-      ]
-    },
-    {
-      "name": "report",
-      "category": "jsonata_query() full report vs SQL",
-      "tests": [
-        {
-          "name": "Report: vs 5 subqueries (5 scans)",
-          "rows": 100000,
-          "gnata": {
-            "median": 0.085,
-            "mean": 0.085,
-            "min": 0.085,
-            "max": 0.085,
-            "runs": [
-              0.085
-            ]
-          },
-          "native": {
-            "median": 0.133,
-            "mean": 0.133,
-            "min": 0.133,
-            "max": 0.133,
-            "runs": [
-              0.133
-            ]
-          },
-          "ratio": 0.6391
-        },
-        {
-          "name": "Report: vs single-scan CASE",
-          "rows": 100000,
-          "gnata": {
-            "median": 0.084,
-            "mean": 0.084,
-            "min": 0.084,
-            "max": 0.084,
-            "runs": [
-              0.084
-            ]
-          },
-          "native": {
-            "median": 0.083,
-            "mean": 0.083,
-            "min": 0.083,
-            "max": 0.083,
-            "runs": [
-              0.083
-            ]
-          },
-          "ratio": 1.012
-        }
-      ]
-    },
-    {
-      "name": "functions",
-      "category": "New gnata functions",
-      "tests": [
-        {
-          "name": "$base64 encode",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.064,
-            "mean": 0.064,
-            "min": 0.064,
-            "max": 0.064,
-            "runs": [
-              0.064
-            ]
-          },
-          "native": null,
-          "ratio": null
-        },
-        {
-          "name": "$urlencode",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.064,
-            "mean": 0.064,
-            "min": 0.064,
-            "max": 0.064,
-            "runs": [
-              0.064
-            ]
-          },
-          "native": null,
-          "ratio": null
-        },
-        {
-          "name": "$htmlescape",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.064,
-            "mean": 0.064,
-            "min": 0.064,
-            "max": 0.064,
-            "runs": [
-              0.064
-            ]
-          },
-          "native": null,
-          "ratio": null
-        },
-        {
-          "name": "$csv format",
-          "rows": 10000,
-          "gnata": {
-            "median": 0.066,
-            "mean": 0.066,
-            "min": 0.066,
-            "max": 0.066,
-            "runs": [
-              0.066
-            ]
-          },
-          "native": null,
-          "ratio": null
-        },
-        {
-          "name": "$number with default (try pattern)",
-          "rows": 100000,
-          "gnata": {
-            "median": 0.151,
-            "mean": 0.151,
-            "min": 0.151,
-            "max": 0.151,
-            "runs": [
-              0.151
-            ]
-          },
-          "native": {
-            "median": 0.072,
-            "mean": 0.072,
-            "min": 0.072,
-            "max": 0.072,
-            "runs": [
-              0.072
-            ]
-          },
-          "ratio": 2.0972
-        },
-        {
-          "name": "jsonata_set vs json_set",
-          "rows": 10000,
+          "gnataSQL": "-- Accumulate mode: $distinct collects unique values\n-- $count($distinct(action)) — count of unique action types\nSELECT jsonata_query('$count($distinct(action))', data) as n\nFROM events;",
+          "nativeSQL": "-- SQL COUNT(DISTINCT ...) is natively optimized\nSELECT COUNT(DISTINCT json_extract(data, '$.action')) as n\nFROM events;",
           "gnata": {
             "median": 0.045,
             "mean": 0.045,
@@ -818,49 +356,602 @@
             ]
           },
           "native": {
-            "median": 0.009,
-            "mean": 0.009,
-            "min": 0.009,
-            "max": 0.009,
+            "median": 0.029,
+            "mean": 0.029,
+            "min": 0.029,
+            "max": 0.029,
             "runs": [
-              0.009
+              0.029
             ]
           },
-          "ratio": 5
-        },
+          "ratio": 1.5517
+        }
+      ]
+    },
+    {
+      "name": "each",
+      "category": "jsonata_each() vs json_each()",
+      "tests": [
         {
-          "name": "jsonata_delete vs json_remove",
-          "rows": 10000,
+          "name": "Expand tags array",
+          "rows": 100000,
+          "gnataSQL": "-- jsonata_each: expand the tags array into rows\n-- Dot-path 'tags' evaluates per row, yields one row per element\nSELECT count(*) as n\nFROM events, jsonata_each('tags', events.data);",
+          "nativeSQL": "-- json_each requires json_extract to get the array first\n-- Two-step: extract array, then expand\nSELECT count(*) as n\nFROM events, json_each(json_extract(events.data, '$.tags'));",
           "gnata": {
-            "median": 0.041,
-            "mean": 0.041,
-            "min": 0.041,
-            "max": 0.041,
+            "median": 0.154,
+            "mean": 0.154,
+            "min": 0.154,
+            "max": 0.154,
             "runs": [
-              0.041
+              0.154
             ]
           },
           "native": {
-            "median": 0.013,
-            "mean": 0.013,
-            "min": 0.013,
-            "max": 0.013,
+            "median": 0.058,
+            "mean": 0.058,
+            "min": 0.058,
+            "max": 0.058,
             "runs": [
-              0.013
+              0.058
             ]
           },
-          "ratio": 3.1538
+          "ratio": 2.6552
+        },
+        {
+          "name": "Expand + filter (price > 100)",
+          "rows": 100000,
+          "gnataSQL": "-- Inline predicate: items[price > 100]\n-- Filter happens inside the JSONata expression, before expansion\nSELECT count(*) as n\nFROM events,\n  jsonata_each('items[price > 100]', events.data);",
+          "nativeSQL": "-- Must expand first, then filter with json_extract on each element\n-- Filter is a separate WHERE clause after the join\nSELECT count(*) as n\nFROM events,\n  json_each(json_extract(events.data, '$.items')) j\nWHERE json_extract(j.value, '$.price') > 100;",
+          "gnata": {
+            "median": 0.842,
+            "mean": 0.842,
+            "min": 0.842,
+            "max": 0.842,
+            "runs": [
+              0.842
+            ]
+          },
+          "native": {
+            "median": 0.145,
+            "mean": 0.145,
+            "min": 0.145,
+            "max": 0.145,
+            "runs": [
+              0.145
+            ]
+          },
+          "ratio": 5.8069
+        },
+        {
+          "name": "Expand + transform (inline arithmetic)",
+          "rows": 100000,
+          "gnataSQL": "-- Auto-mapping: items.(qty * price) evaluates per array element\n-- Each expanded row is already the computed product\nSELECT sum(value) as total\nFROM events, jsonata_each('items.(qty * price)', events.data);",
+          "nativeSQL": "-- Must extract qty and price separately from each element\n-- Two json_extract calls per expanded row\nSELECT sum(json_extract(j.value, '$.qty') * json_extract(j.value, '$.price')) as total\nFROM events, json_each(json_extract(events.data, '$.items')) j;",
+          "gnata": {
+            "median": 0.866,
+            "mean": 0.866,
+            "min": 0.866,
+            "max": 0.866,
+            "runs": [
+              0.866
+            ]
+          },
+          "native": {
+            "median": 0.18,
+            "mean": 0.18,
+            "min": 0.18,
+            "max": 0.18,
+            "runs": [
+              0.18
+            ]
+          },
+          "ratio": 4.8111
+        },
+        {
+          "name": "Flatten + deduplicate (DISTINCT)",
+          "rows": 100000,
+          "gnataSQL": "-- Expand tags across all rows, count unique values\n-- jsonata_each + SQL DISTINCT\nSELECT count(DISTINCT value) as n\nFROM events, jsonata_each('tags', events.data);",
+          "nativeSQL": "-- json_each + json_extract + SQL DISTINCT\n-- Extra json_extract step to reach the array\nSELECT count(DISTINCT j.value) as n\nFROM events, json_each(json_extract(events.data, '$.tags')) j;",
+          "gnata": {
+            "median": 0.212,
+            "mean": 0.212,
+            "min": 0.212,
+            "max": 0.212,
+            "runs": [
+              0.212
+            ]
+          },
+          "native": {
+            "median": 0.071,
+            "mean": 0.071,
+            "min": 0.071,
+            "max": 0.071,
+            "runs": [
+              0.071
+            ]
+          },
+          "ratio": 2.9859
+        },
+        {
+          "name": "GROUP BY on expanded elements",
+          "rows": 100000,
+          "gnataSQL": "-- Expand tags, then GROUP BY the expanded values\n-- Count occurrences of each tag\nSELECT je.value as tag, count(*) as n\nFROM events, jsonata_each('tags', events.data) je\nGROUP BY tag ORDER BY n DESC LIMIT 5;",
+          "nativeSQL": "-- json_each + json_extract, then GROUP BY\n-- Same result, more verbose syntax\nSELECT j.value as tag, count(*) as n\nFROM events, json_each(json_extract(events.data, '$.tags')) j\nGROUP BY tag ORDER BY n DESC LIMIT 5;",
+          "gnata": {
+            "median": 0.24,
+            "mean": 0.24,
+            "min": 0.24,
+            "max": 0.24,
+            "runs": [
+              0.24
+            ]
+          },
+          "native": {
+            "median": 0.099,
+            "mean": 0.099,
+            "min": 0.099,
+            "max": 0.099,
+            "runs": [
+              0.099
+            ]
+          },
+          "ratio": 2.4242
+        }
+      ]
+    },
+    {
+      "name": "complex",
+      "category": "jsonata_query() vs complex SQL",
+      "tests": [
+        {
+          "name": "COUNT DISTINCT users",
+          "rows": 100000,
+          "gnataSQL": "-- Accumulate all user values, deduplicate, count\n-- $distinct collects unique values, $count returns the total\nSELECT jsonata_query('$count($distinct(user))', data) as n\nFROM events;",
+          "nativeSQL": "-- SQL COUNT(DISTINCT ...) handles this natively\n-- Single pass with hash-based deduplication\nSELECT COUNT(DISTINCT json_extract(data, '$.user')) as n\nFROM events;",
+          "gnata": {
+            "median": 0.045,
+            "mean": 0.045,
+            "min": 0.045,
+            "max": 0.045,
+            "runs": [
+              0.045
+            ]
+          },
+          "native": {
+            "median": 0.045,
+            "mean": 0.045,
+            "min": 0.045,
+            "max": 0.045,
+            "runs": [
+              0.045
+            ]
+          },
+          "ratio": 1
+        },
+        {
+          "name": "GROUP BY + SUM per-region revenue",
+          "rows": 100000,
+          "gnataSQL": "-- Streaming $sum inside a GROUP BY\n-- jsonata_query resets its accumulator per group\nSELECT json_extract(data, '$.region') as region,\n       jsonata_query('$sum(amount)', data) as revenue\nFROM events\nWHERE json_extract(data, '$.action') = 'purchase'\nGROUP BY region;",
+          "nativeSQL": "-- SQL GROUP BY + SUM with json_extract\n-- Two json_extract calls per row (region + amount), plus one for WHERE\nSELECT json_extract(data, '$.region') as region,\n       sum(json_extract(data, '$.amount')) as revenue\nFROM events\nWHERE json_extract(data, '$.action') = 'purchase'\nGROUP BY region;",
+          "gnata": {
+            "median": 0.054,
+            "mean": 0.054,
+            "min": 0.054,
+            "max": 0.054,
+            "runs": [
+              0.054
+            ]
+          },
+          "native": {
+            "median": 0.052,
+            "mean": 0.052,
+            "min": 0.052,
+            "max": 0.052,
+            "runs": [
+              0.052
+            ]
+          },
+          "ratio": 1.0385
+        },
+        {
+          "name": "TOP N users by spend (accumulate)",
+          "rows": 100000,
+          "gnataSQL": "-- Accumulate all purchase rows, sort by amount descending\n-- Project to {user, amount} objects\nSELECT jsonata_query(\n  '$sort($, function($a,$b){ $a.amount > $b.amount }).{\"user\": user, \"amount\": amount}',\n  data\n) FROM events\nWHERE json_extract(data, '$.action') = 'purchase';",
+          "nativeSQL": "-- SQL GROUP BY + ORDER BY + LIMIT\n-- Aggregates per user, then sorts the grouped results\nSELECT json_extract(data, '$.user') as user,\n       sum(json_extract(data, '$.amount')) as total\nFROM events\nWHERE json_extract(data, '$.action') = 'purchase'\nGROUP BY user ORDER BY total DESC LIMIT 5;",
+          "gnata": {
+            "median": 0.164,
+            "mean": 0.164,
+            "min": 0.164,
+            "max": 0.164,
+            "runs": [
+              0.164
+            ]
+          },
+          "native": {
+            "median": 0.051,
+            "mean": 0.051,
+            "min": 0.051,
+            "max": 0.051,
+            "runs": [
+              0.051
+            ]
+          },
+          "ratio": 3.2157
+        },
+        {
+          "name": "Flatten + deduplicate tags (accumulate)",
+          "rows": 100000,
+          "gnataSQL": "-- Accumulate: $reduce flattens all tag arrays into one list\n-- Then $distinct deduplicates, $count tallies\nSELECT jsonata_query(\n  '$count($distinct($reduce($, function($a,$v){ $append($a, $v.tags) }, [])))',\n  data\n) as unique_tags\nFROM events;",
+          "nativeSQL": "-- SQL: expand arrays with json_each, then COUNT DISTINCT\n-- Uses a join to flatten, subquery to deduplicate\nSELECT COUNT(*) as unique_tags FROM (\n  SELECT DISTINCT j.value\n  FROM events, json_each(json_extract(events.data, '$.tags')) as j\n);",
+          "gnata": {
+            "median": 46.976,
+            "mean": 46.976,
+            "min": 46.976,
+            "max": 46.976,
+            "runs": [
+              46.976
+            ]
+          },
+          "native": {
+            "median": 0.069,
+            "mean": 0.069,
+            "min": 0.069,
+            "max": 0.069,
+            "runs": [
+              0.069
+            ]
+          },
+          "ratio": 680.8116
+        },
+        {
+          "name": "Sessionize user journeys (accumulate)",
+          "rows": 100000,
+          "gnataSQL": "-- Per user: sort events by timestamp, join actions into a path\n-- $sort + $join in a single expression\nSELECT json_extract(data, '$.user') as user,\n       jsonata_query(\n         '$join($sort($, function($a,$b){$a.ts > $b.ts}).action, \" > \")',\n         data\n       ) as journey\nFROM events\nGROUP BY user LIMIT 5;",
+          "nativeSQL": "-- SQL: subquery sorts by timestamp, then group_concat joins\n-- Requires ordering in a subquery before grouping\nSELECT user, journey FROM (\n  SELECT json_extract(data, '$.user') as user,\n         group_concat(json_extract(data, '$.action'), ' > ') as journey\n  FROM (\n    SELECT data FROM events\n    ORDER BY json_extract(data, '$.ts')\n  )\n  GROUP BY user\n) LIMIT 5;",
+          "gnata": {
+            "median": 0.07,
+            "mean": 0.07,
+            "min": 0.07,
+            "max": 0.07,
+            "runs": [
+              0.07
+            ]
+          },
+          "native": {
+            "median": 0.145,
+            "mean": 0.145,
+            "min": 0.145,
+            "max": 0.145,
+            "runs": [
+              0.145
+            ]
+          },
+          "ratio": 0.4828,
+          "variants": [
+            {
+              "label": "SQL (window function)",
+              "timing": {
+                "median": 0.205,
+                "mean": 0.205,
+                "min": 0.205,
+                "max": 0.205,
+                "runs": [
+                  0.205
+                ]
+              },
+              "ratio": 0.3415,
+              "sql": "-- Optimized: use ROW_NUMBER() window function for ordering\n-- Avoids the subquery sort, processes in a single pass\nSELECT user, group_concat(action, ' > ') as journey FROM (\n  SELECT json_extract(data, '$.user') as user,\n         json_extract(data, '$.action') as action,\n         ROW_NUMBER() OVER (\n           PARTITION BY json_extract(data, '$.user')\n           ORDER BY json_extract(data, '$.ts')\n         ) as rn\n  FROM events\n)\nGROUP BY user LIMIT 5;"
+            }
+          ]
+        },
+        {
+          "name": "Build report object (accumulate)",
+          "rows": 100000,
+          "gnataSQL": "-- Single expression produces a full report object\n-- Combines $count, $sum, $filter, $distinct, $average\nSELECT jsonata_query('{\n  \"total_events\": $count($),\n  \"revenue\": $sum($filter($, function($v){ $v.action = \"purchase\" }).amount),\n  \"unique_users\": $count($distinct(user)),\n  \"avg_purchase\": $average($filter($, function($v){ $v.action = \"purchase\" }).amount)\n}', data) as report\nFROM events;",
+          "nativeSQL": "-- SQL: 4 separate subqueries = 4 full table scans\n-- Readable but scans the table once per metric\nSELECT json_object(\n  'total_events', (SELECT count(*) FROM events),\n  'revenue', (SELECT sum(json_extract(data, '$.amount'))\n              FROM events WHERE json_extract(data, '$.action') = 'purchase'),\n  'unique_users', (SELECT COUNT(DISTINCT json_extract(data, '$.user'))\n                   FROM events),\n  'avg_purchase', (SELECT avg(json_extract(data, '$.amount'))\n                   FROM events WHERE json_extract(data, '$.action') = 'purchase')\n) as report;",
+          "gnata": {
+            "median": 0.073,
+            "mean": 0.073,
+            "min": 0.073,
+            "max": 0.073,
+            "runs": [
+              0.073
+            ]
+          },
+          "native": {
+            "median": 0.121,
+            "mean": 0.121,
+            "min": 0.121,
+            "max": 0.121,
+            "runs": [
+              0.121
+            ]
+          },
+          "ratio": 0.6033,
+          "variants": [
+            {
+              "label": "SQL (single-scan CASE)",
+              "timing": {
+                "median": 0.229,
+                "mean": 0.229,
+                "min": 0.229,
+                "max": 0.229,
+                "runs": [
+                  0.229
+                ]
+              },
+              "ratio": 0.3188,
+              "sql": "-- Optimized: CASE expressions compute all metrics in one pass\n-- Same result but only scans the table once\nSELECT json_object(\n  'total_events', COUNT(*),\n  'revenue',      SUM(CASE WHEN json_extract(data, '$.action') = 'purchase'\n                       THEN json_extract(data, '$.amount') END),\n  'unique_users', COUNT(DISTINCT json_extract(data, '$.user')),\n  'avg_purchase', AVG(CASE WHEN json_extract(data, '$.action') = 'purchase'\n                       THEN json_extract(data, '$.amount') END)\n) as report\nFROM events;"
+            }
+          ]
+        },
+        {
+          "name": "Histogram bucketing (accumulate)",
+          "rows": 100000,
+          "gnataSQL": "-- Inline bucketing with lambda functions\n-- $filter + $count per bucket, all in one expression\nSELECT jsonata_query('\n  (\n    $data := $;\n    $bucket := function($v){\n      $v.amount <= 100 ? \"0-100\" :\n      $v.amount <= 300 ? \"100-300\" :\n      $v.amount <= 500 ? \"300-500\" : \"500+\"\n    };\n    {\n      \"0-100\":   $count($filter($data, function($v){ $bucket($v) = \"0-100\" })),\n      \"100-300\": $count($filter($data, function($v){ $bucket($v) = \"100-300\" })),\n      \"300-500\": $count($filter($data, function($v){ $bucket($v) = \"300-500\" })),\n      \"500+\":    $count($filter($data, function($v){ $bucket($v) = \"500+\" }))\n    }\n  )\n', data)\nFROM events\nWHERE json_extract(data, '$.action') = 'purchase';",
+          "nativeSQL": "-- SQL CASE + GROUP BY for bucketing\n-- Single scan, built-in grouping\nSELECT\n  CASE\n    WHEN json_extract(data, '$.amount') <= 100 THEN '0-100'\n    WHEN json_extract(data, '$.amount') <= 300 THEN '100-300'\n    WHEN json_extract(data, '$.amount') <= 500 THEN '300-500'\n    ELSE '500+'\n  END as bucket,\n  count(*) as n\nFROM events\nWHERE json_extract(data, '$.action') = 'purchase'\nGROUP BY bucket ORDER BY bucket;",
+          "gnata": {
+            "median": 0.443,
+            "mean": 0.443,
+            "min": 0.443,
+            "max": 0.443,
+            "runs": [
+              0.443
+            ]
+          },
+          "native": {
+            "median": 0.073,
+            "mean": 0.073,
+            "min": 0.073,
+            "max": 0.073,
+            "runs": [
+              0.073
+            ]
+          },
+          "ratio": 6.0685
+        },
+        {
+          "name": "Streaming $sum at scale",
+          "rows": 100000,
+          "gnataSQL": "-- Streaming accumulator on full table\n-- O(1) memory regardless of table size\nSELECT jsonata_query('$sum(amount)', data) as total\nFROM events;",
+          "nativeSQL": "-- SQL sum with json_extract\n-- Baseline: native aggregate, single pass\nSELECT sum(json_extract(data, '$.amount')) as total\nFROM events;",
+          "gnata": {
+            "median": 0.119,
+            "mean": 0.119,
+            "min": 0.119,
+            "max": 0.119,
+            "runs": [
+              0.119
+            ]
+          },
+          "native": {
+            "median": 0.071,
+            "mean": 0.071,
+            "min": 0.071,
+            "max": 0.071,
+            "runs": [
+              0.071
+            ]
+          },
+          "ratio": 1.6761
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "category": "jsonata_query() full report vs SQL",
+      "tests": [
+        {
+          "name": "Report: vs 5 subqueries (5 scans)",
+          "rows": 100000,
+          "gnataSQL": "-- Single expression: 5 metrics computed in one table scan\n-- Streaming accumulators for $count, $sum, $average\n-- $filter shares predicate evaluation across accumulators\nSELECT jsonata_query('{\n  \"total\": $count($),\n  \"revenue\": $sum($filter($, function($v){$v.status = \"completed\"}).amount),\n  \"refunds\": $sum($filter($, function($v){$v.status = \"refunded\"}).amount),\n  \"avg\": $round($average(amount), 2),\n  \"customers\": $count($distinct(customer))\n}', data) as report\nFROM orders;",
+          "nativeSQL": "-- 5 separate subqueries = 5 full table scans\n-- Readable but increasingly expensive with table size\nSELECT json_object(\n  'total',     (SELECT count(*) FROM orders),\n  'revenue',   (SELECT sum(json_extract(data, '$.amount'))\n                FROM orders WHERE json_extract(data, '$.status')='completed'),\n  'refunds',   (SELECT sum(json_extract(data, '$.amount'))\n                FROM orders WHERE json_extract(data, '$.status')='refunded'),\n  'avg',       (SELECT round(avg(json_extract(data, '$.amount')),2) FROM orders),\n  'customers', (SELECT count(distinct json_extract(data, '$.customer')) FROM orders)\n) as report;",
+          "gnata": {
+            "median": 0.177,
+            "mean": 0.177,
+            "min": 0.177,
+            "max": 0.177,
+            "runs": [
+              0.177
+            ]
+          },
+          "native": {
+            "median": 0.318,
+            "mean": 0.318,
+            "min": 0.318,
+            "max": 0.318,
+            "runs": [
+              0.318
+            ]
+          },
+          "ratio": 0.5566
+        },
+        {
+          "name": "Report: vs single-scan CASE",
+          "rows": 100000,
+          "gnataSQL": "-- Same single-expression report as above\n-- One scan, streaming accumulators, shared predicates\nSELECT jsonata_query('{\n  \"total\": $count($),\n  \"revenue\": $sum($filter($, function($v){$v.status = \"completed\"}).amount),\n  \"refunds\": $sum($filter($, function($v){$v.status = \"refunded\"}).amount),\n  \"avg\": $round($average(amount), 2),\n  \"customers\": $count($distinct(customer))\n}', data) as report\nFROM orders;",
+          "nativeSQL": "-- Hand-optimized: CASE expressions in a single scan\n-- Most efficient pure SQL approach for multi-metric reports\nSELECT json_object(\n  'total',     COUNT(*),\n  'revenue',   SUM(CASE WHEN json_extract(data, '$.status') = 'completed'\n                   THEN json_extract(data, '$.amount') END),\n  'refunds',   SUM(CASE WHEN json_extract(data, '$.status') = 'refunded'\n                   THEN json_extract(data, '$.amount') END),\n  'avg',       ROUND(AVG(json_extract(data, '$.amount')), 2),\n  'customers', COUNT(DISTINCT json_extract(data, '$.customer'))\n) as report\nFROM orders;",
+          "gnata": {
+            "median": 0.105,
+            "mean": 0.105,
+            "min": 0.105,
+            "max": 0.105,
+            "runs": [
+              0.105
+            ]
+          },
+          "native": {
+            "median": 0.099,
+            "mean": 0.099,
+            "min": 0.099,
+            "max": 0.099,
+            "runs": [
+              0.099
+            ]
+          },
+          "ratio": 1.0606
+        }
+      ]
+    },
+    {
+      "name": "functions",
+      "category": "New gnata functions",
+      "tests": [
+        {
+          "name": "$base64 encode",
+          "rows": 100000,
+          "gnataSQL": "-- Base64-encode the payload field per row\n-- No SQLite equivalent without a custom extension\nSELECT count(*) as n\nFROM events\nWHERE length(jsonata('$base64(payload)', data)) > 0;",
+          "nativeSQL": null,
+          "gnata": {
+            "median": 0.633,
+            "mean": 0.633,
+            "min": 0.633,
+            "max": 0.633,
+            "runs": [
+              0.633
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$urlencode",
+          "rows": 100000,
+          "gnataSQL": "-- URL-encode the email field per row\n-- Handles special characters like @ automatically\nSELECT count(*) as n\nFROM events\nWHERE length(jsonata('$urlencode(email)', data)) > 0;",
+          "nativeSQL": null,
+          "gnata": {
+            "median": 0.656,
+            "mean": 0.656,
+            "min": 0.656,
+            "max": 0.656,
+            "runs": [
+              0.656
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$htmlescape",
+          "rows": 100000,
+          "gnataSQL": "-- HTML-escape content to prevent XSS\n-- Converts <, >, &, \" to HTML entities\nSELECT count(*) as n\nFROM events\nWHERE length(jsonata('$htmlescape(html_content)', data)) > 0;",
+          "nativeSQL": null,
+          "gnata": {
+            "median": 0.669,
+            "mean": 0.669,
+            "min": 0.669,
+            "max": 0.669,
+            "runs": [
+              0.669
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$csv format",
+          "rows": 100000,
+          "gnataSQL": "-- Format array of fields as a CSV row\n-- Handles quoting and escaping automatically\nSELECT count(*) as n\nFROM events\nWHERE length(jsonata('$csv([user, email, action])', data)) > 0;",
+          "nativeSQL": null,
+          "gnata": {
+            "median": 0.687,
+            "mean": 0.687,
+            "min": 0.687,
+            "max": 0.687,
+            "runs": [
+              0.687
+            ]
+          },
+          "native": null,
+          "ratio": null
+        },
+        {
+          "name": "$number with default (try pattern)",
+          "rows": 100000,
+          "gnataSQL": "-- 3-arg jsonata: expression, data, default if error\n-- ~14k rows have 'invalid' as amount, default to 0\nSELECT sum(jsonata('$number(amount)', data, 0)) as total\nFROM events;",
+          "nativeSQL": "-- SQL fallback: typeof check + GLOB pattern + CASE\n-- Verbose manual validation of numeric strings\nSELECT sum(\n  CASE WHEN typeof(json_extract(data, '$.amount')) = 'text'\n       AND json_extract(data, '$.amount') GLOB '*[^0-9.]*'\n  THEN 0\n  ELSE CAST(json_extract(data, '$.amount') AS REAL)\n  END\n) as total\nFROM events;",
+          "gnata": {
+            "median": 0.153,
+            "mean": 0.153,
+            "min": 0.153,
+            "max": 0.153,
+            "runs": [
+              0.153
+            ]
+          },
+          "native": {
+            "median": 0.073,
+            "mean": 0.073,
+            "min": 0.073,
+            "max": 0.073,
+            "runs": [
+              0.073
+            ]
+          },
+          "ratio": 2.0959
+        },
+        {
+          "name": "jsonata_set vs json_set",
+          "rows": 100000,
+          "gnataSQL": "-- Set a field using dot-path syntax\n-- jsonata_set(json, path, value) — no dollar-prefix needed\nSELECT count(*) as n FROM (\n  SELECT jsonata_set(data, 'processed', 'true') as modified\n  FROM events\n) WHERE length(modified) > 0;",
+          "nativeSQL": "-- SQLite built-in json_set with dollar-path\n-- json_set(json, '$.path', value)\nSELECT count(*) as n FROM (\n  SELECT json_set(data, '$.processed', 1) as modified\n  FROM events\n) WHERE length(modified) > 0;",
+          "gnata": {
+            "median": 0.473,
+            "mean": 0.473,
+            "min": 0.473,
+            "max": 0.473,
+            "runs": [
+              0.473
+            ]
+          },
+          "native": {
+            "median": 0.094,
+            "mean": 0.094,
+            "min": 0.094,
+            "max": 0.094,
+            "runs": [
+              0.094
+            ]
+          },
+          "ratio": 5.0319
+        },
+        {
+          "name": "jsonata_delete vs json_remove",
+          "rows": 100000,
+          "gnataSQL": "-- Remove a field using dot-path syntax\n-- jsonata_delete(json, path) — no dollar-prefix needed\nSELECT count(*) as n FROM (\n  SELECT jsonata_delete(data, 'internal_id') as cleaned\n  FROM events\n) WHERE length(cleaned) > 0;",
+          "nativeSQL": "-- SQLite built-in json_remove with dollar-path\n-- json_remove(json, '$.path')\nSELECT count(*) as n FROM (\n  SELECT json_remove(data, '$.internal_id') as cleaned\n  FROM events\n) WHERE length(cleaned) > 0;",
+          "gnata": {
+            "median": 0.346,
+            "mean": 0.346,
+            "min": 0.346,
+            "max": 0.346,
+            "runs": [
+              0.346
+            ]
+          },
+          "native": {
+            "median": 0.074,
+            "mean": 0.074,
+            "min": 0.074,
+            "max": 0.074,
+            "runs": [
+              0.074
+            ]
+          },
+          "ratio": 4.6757
         },
         {
           "name": "Format in aggregate context",
-          "rows": 1000,
+          "rows": 100000,
+          "gnataSQL": "-- $base64 called inside a $filter inside jsonata_query\n-- Tests function overhead in accumulate mode\nSELECT jsonata_query(\n  '$count($filter($, function($v){ $base64($v.user) != \"\" }))',\n  data\n) as n\nFROM events;",
+          "nativeSQL": null,
           "gnata": {
-            "median": 0.011,
-            "mean": 0.011,
-            "min": 0.011,
-            "max": 0.011,
+            "median": 0.572,
+            "mean": 0.572,
+            "min": 0.572,
+            "max": 0.572,
             "runs": [
-              0.011
+              0.572
             ]
           },
           "native": null,

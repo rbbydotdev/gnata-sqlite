@@ -26,9 +26,9 @@ interface UseJsonataWasmOptions {
     evalWasmUrl?: string;
     /** URL to wasm_exec.js (standard Go WASM runtime). Required if evalWasmUrl is given. */
     evalExecUrl?: string;
-    /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 61KB gzipped). Provides autocomplete, hover, diagnostics. */
+    /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 61KB gzipped). Provides autocomplete, hover, diagnostics. Defaults to '/gnata-lsp.wasm'. */
     lspWasmUrl?: string;
-    /** URL to lsp-wasm_exec.js (TinyGo WASM runtime). Required if lspWasmUrl is given. */
+    /** URL to lsp-wasm_exec.js (TinyGo WASM runtime). Required if lspWasmUrl is given. Defaults to '/lsp-wasm_exec.js'. */
     lspExecUrl?: string;
 }
 /**
@@ -36,10 +36,10 @@ interface UseJsonataWasmOptions {
  * The most common use case: embed an expression editor, run evaluation on the backend.
  */
 interface UseJsonataLspOptions {
-    /** URL to gnata-lsp.wasm */
-    lspWasmUrl: string;
-    /** URL to lsp-wasm_exec.js */
-    lspExecUrl: string;
+    /** URL to gnata-lsp.wasm. Defaults to '/gnata-lsp.wasm'. */
+    lspWasmUrl?: string;
+    /** URL to lsp-wasm_exec.js. Defaults to '/lsp-wasm_exec.js'. */
+    lspExecUrl?: string;
 }
 interface WasmState {
     /** True when the eval WASM module is loaded and ready */
@@ -68,7 +68,9 @@ interface WasmState {
  * Both are optional and loaded independently. The eval module is loaded first;
  * the LSP module is loaded in the background.
  */
-declare function useJsonataWasm(options: UseJsonataWasmOptions): WasmState;
+declare const LSP_WASM_DEFAULT_URL = "/gnata-lsp.wasm";
+declare const LSP_EXEC_DEFAULT_URL = "/lsp-wasm_exec.js";
+declare function useJsonataWasm(options?: UseJsonataWasmOptions): WasmState;
 
 /**
  * Lightweight hook for editor-only mode — loads just the LSP WASM (61KB gzipped).
@@ -76,11 +78,13 @@ declare function useJsonataWasm(options: UseJsonataWasmOptions): WasmState;
  * The most common use case: embed a JSONata expression editor with autocomplete,
  * hover docs, and diagnostics. Evaluation runs on the backend, not in the browser.
  *
+ * Works with zero configuration after setup:
+ * ```bash
+ * npx @gnata-sqlite/react setup ./public
+ * ```
+ *
  * ```tsx
- * const lsp = useJsonataLsp({
- *   lspWasmUrl: '/gnata-lsp.wasm',
- *   lspExecUrl: '/lsp-wasm_exec.js',
- * });
+ * const lsp = useJsonataLsp();
  *
  * <JsonataEditor
  *   value={expression}
@@ -93,7 +97,7 @@ declare function useJsonataWasm(options: UseJsonataWasmOptions): WasmState;
  *
  * No gnata.wasm (5.3MB) download needed. No eval in the browser.
  */
-declare function useJsonataLsp(options: UseJsonataLspOptions): WasmState;
+declare function useJsonataLsp(options?: UseJsonataLspOptions): WasmState;
 
 interface JsonataEvalResult {
     /** The evaluated result as a formatted string */
@@ -441,4 +445,4 @@ declare function tooltipTheme(mode?: 'dark' | 'light'): _codemirror_state.Extens
  */
 declare const jsonataStreamLanguage: StreamLanguage<unknown>;
 
-export { type CMTokenColors, type ColorPalette, JsonataEditor, type JsonataEditorProps, type JsonataEvalResult, JsonataInput, type JsonataInputProps, JsonataPlayground, type JsonataPlaygroundProps, JsonataResult, type JsonataResultProps, type Schema, type SchemaField, type UseJsonataEditorOptions, type UseJsonataEditorReturn, type UseJsonataLspOptions, type UseJsonataWasmOptions, type WasmState, allKeysFromJson, buildSchema, collectKeys, createEditorTheme, createHighlightStyle, darkColors, darkTokenColors, formatHoverMarkdown, formatTiming, jsonataStreamLanguage, lightColors, lightTokenColors, tokyoNightTheme, tooltipTheme, useJsonataEditor, useJsonataEval, useJsonataLsp, useJsonataSchema, useJsonataWasm };
+export { type CMTokenColors, type ColorPalette, JsonataEditor, type JsonataEditorProps, type JsonataEvalResult, JsonataInput, type JsonataInputProps, JsonataPlayground, type JsonataPlaygroundProps, JsonataResult, type JsonataResultProps, LSP_EXEC_DEFAULT_URL, LSP_WASM_DEFAULT_URL, type Schema, type SchemaField, type UseJsonataEditorOptions, type UseJsonataEditorReturn, type UseJsonataLspOptions, type UseJsonataWasmOptions, type WasmState, allKeysFromJson, buildSchema, collectKeys, createEditorTheme, createHighlightStyle, darkColors, darkTokenColors, formatHoverMarkdown, formatTiming, jsonataStreamLanguage, lightColors, lightTokenColors, tokyoNightTheme, tooltipTheme, useJsonataEditor, useJsonataEval, useJsonataLsp, useJsonataSchema, useJsonataWasm };
