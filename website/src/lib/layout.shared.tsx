@@ -13,6 +13,10 @@ export function baseOptions(): BaseLayoutProps {
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
     links: [
       {
+        text: 'Documentation',
+        url: '/docs',
+      },
+      {
         text: 'Playground',
         url: 'https://rbby.dev/gnata-sqlite/playground',
         external: true,

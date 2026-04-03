@@ -153,7 +153,7 @@ export default async function HomePage() {
             href="/docs"
             className="shimmer-btn inline-flex items-center gap-2 px-8 py-3 text-sm font-semibold landing-btn-text"
           >
-            Learn More
+            Get Started
           </Link>
         </div>
 
