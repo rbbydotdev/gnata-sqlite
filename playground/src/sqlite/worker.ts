@@ -1,6 +1,9 @@
 /// <reference lib="webworker" />
 
 import type { WorkerInMessage, WorkerOutMessage, DataPools } from './types';
+// Static import prevents WebKit from re-evaluating the worker module
+// when a dynamic import chunk loads (which resets module-level state).
+import initSqlJs from 'sql.js';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -81,8 +84,6 @@ async function doInit(msg: { type: 'init'; wasmExecText: string; wasmBytes: Arra
     return r as string;
   };
 
-  // Load sql.js from installed package (Vite bundles this into the worker)
-  const initSqlJs = (await import('sql.js')).default;
   const SQL: SqlJsStatic = await initSqlJs({
     locateFile: (f: string) => 'https://cdn.jsdelivr.net/npm/sql.js@1/dist/' + f,
   });
