@@ -1,5 +1,5 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { BookOpen, SquareTerminal } from 'lucide-react';
+import { BookOpen, SquareTerminal, Zap } from 'lucide-react';
 import { gitConfig } from './shared';
 
 export function baseOptions(): BaseLayoutProps {
@@ -30,6 +30,16 @@ export function baseOptions(): BaseLayoutProps {
           </span>
         ),
         url: 'https://rbby.dev/gnata-sqlite/playground',
+        external: true,
+      },
+      {
+        text: (
+          <span className="inline-flex items-center gap-1.5">
+            <Zap className="size-4" />
+            rbby.dev
+          </span>
+        ),
+        url: 'https://rbby.dev',
         external: true,
       },
     ],
