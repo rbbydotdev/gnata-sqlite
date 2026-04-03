@@ -50,16 +50,14 @@ export function GnataMode() {
   const [activeExample, setActiveExample] = useState<number | null>(null);
 
   const wasm = useJsonataWasm(WASM_OPTIONS);
+  const schema = useJsonataSchema(inputJson);
+  const evalResult = useJsonataEval(expression, inputJson, wasm.gnataEval);
 
   const inputJsonRef = useRef(inputJson);
   inputJsonRef.current = inputJson;
   const getInputJson = useCallback(() => inputJsonRef.current, []);
 
-  const schema = useJsonataSchema(inputJson);
-
-  const evalResult = useJsonataEval(expression, inputJson, wasm.gnataEval);
-
-  // Update parent status based on WASM readiness
+  // Report WASM loading status to the layout chrome
   const prevReady = useRef(false);
   useEffect(() => {
     if (wasm.isReady && !prevReady.current) {
@@ -84,36 +82,23 @@ export function GnataMode() {
     setActiveExample(null);
   }, []);
 
-  const loadExample = useCallback(
-    (idx: number) => {
-      const key = EXAMPLE_KEYS[idx];
-      const ex = GNATA_EXAMPLES[key];
-      if (!ex) return;
-      setExpression(ex.expr);
-      setInputJson(ex.data);
-      setActiveExample(idx);
-    },
-    [],
-  );
-
-  const colors = theme === 'dark'
-    ? { surface: '#1f2335', border: '#292e42', muted: '#565f89', green: '#9ece6a', accent: '#7aa2f7', accentText: '#1a1b26' }
-    : { surface: '#e1e2e7', border: '#c4c8da', muted: '#848cb5', green: '#587539', accent: '#2e7de9', accentText: '#ffffff' };
+  const loadExample = useCallback((idx: number) => {
+    const key = EXAMPLE_KEYS[idx];
+    const ex = GNATA_EXAMPLES[key];
+    if (!ex) return;
+    setExpression(ex.expr);
+    setInputJson(ex.data);
+    setActiveExample(idx);
+  }, []);
 
   return (
     <div className="gnata-mode-wrapper">
       {/* Toolbar */}
       <div className="toolbar">
-        <button
-          className="btn-primary"
-          disabled={!wasm.isReady}
-          onClick={handleRun}
-        >
+        <button className="btn-primary" disabled={!wasm.isReady} onClick={handleRun}>
           Run<kbd>{'\u2318\u21A9'}</kbd>
         </button>
-        <button className="btn-ghost" onClick={handleClear}>
-          Clear
-        </button>
+        <button className="btn-ghost" onClick={handleClear}>Clear</button>
         <div className="toolbar-right">
           <span className="timing">{evalResult.timing}</span>
         </div>
@@ -136,27 +121,8 @@ export function GnataMode() {
       </div>
 
       {/* Expression bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'stretch',
-        borderBottom: `1px solid ${colors.border}`,
-        background: colors.surface,
-        flexShrink: 0,
-      }}>
-        <div style={{
-          padding: '10px 16px',
-          fontSize: 11,
-          fontWeight: 600,
-          textTransform: 'uppercase' as const,
-          letterSpacing: '0.8px',
-          color: colors.muted,
-          borderRight: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          minWidth: 120,
-        }}>
-          Expression
-        </div>
+      <div className="expression-bar">
+        <div className="expression-bar-label">Expression</div>
         <JsonataEditor
           value={expression}
           onChange={setExpression}
@@ -173,20 +139,8 @@ export function GnataMode() {
       </div>
 
       {/* Input + Result panels */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        flex: 1,
-        overflow: 'hidden',
-        minHeight: 0,
-      }}>
-        {/* Input panel */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          borderRight: `1px solid ${colors.border}`,
-        }}>
+      <div className="gnata-panels">
+        <div className="gnata-panel">
           <div className="panel-header">Input JSON</div>
           <JsonataInput
             value={inputJson}
@@ -195,13 +149,7 @@ export function GnataMode() {
             style={{ flex: 1, overflow: 'hidden' }}
           />
         </div>
-
-        {/* Result panel */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}>
+        <div className="gnata-panel">
           <div className="panel-header">Result</div>
           <JsonataResult
             value={evalResult.result}
