@@ -10,3 +10,7 @@ node_modules/
 editor/codemirror/dist/
 lsp-wasm_exec.js
 wasm_exec.js
+
+# Ship pre-built LSP WASM in the react package
+!react/wasm/gnata-lsp.wasm
+!react/wasm/lsp-wasm_exec.js
