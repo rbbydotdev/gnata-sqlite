@@ -58,9 +58,11 @@ install:
 # Stage WASM assets into the react package for distribution
 # Depends on wasm target; skip with `make stage-wasm-only` if files already exist.
 stage-wasm: wasm
+	mkdir -p react/wasm
 	cp gnata-lsp.wasm lsp-wasm_exec.js react/wasm/
 
 stage-wasm-only:
+	mkdir -p react/wasm
 	cp gnata-lsp.wasm lsp-wasm_exec.js react/wasm/
 
 # Build and publish npm packages
