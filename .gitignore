@@ -8,5 +8,6 @@ skills-lock.json
 .DS_Store
 node_modules/
 editor/codemirror/dist/
+react/dist/
 lsp-wasm_exec.js
 wasm_exec.js

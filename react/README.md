@@ -38,16 +38,16 @@ Peer dependencies: `react >=18`, `react-dom >=18`.
 The package is **hooks-first** — every feature is a hook. Components compose hooks. Use the full `<JsonataPlayground>` widget, or pick individual pieces for custom layouts.
 
 ```
-┌─────────────────────────────────────────────────┐
-│                JsonataPlayground                │
-│  ┌──────────────┬─────────────┬───────────────┐ │
-│  │ JsonataEditor│ JsonataInput│ JsonataResult │ │
-│  └──────┬───────┴──────┬──────┴───────┬───────┘ │
-│         │              │              │         │
+┌─────────────────────────────────────────────────────┐
+│                  JsonataPlayground                  │
+│  ┌──────────────┬─────────────┬───────────────┐     │
+│  │ JsonataEditor│ JsonataInput│ JsonataResult │     │
+│  └──────┬───────┴──────┬──────┴───────┬───────┘     │
+│         │              │              │             │
 │  useJsonataEditor  useJsonataEval  useJsonataSchema │
-│         │                                       │
-│  useJsonataWasm (loads gnata.wasm + LSP WASM)   │
-└─────────────────────────────────────────────────┘
+│         │                                           │
+│  useJsonataWasm (loads gnata.wasm + LSP WASM)       │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Hooks
@@ -273,19 +273,18 @@ import {
 
 ## WASM Files
 
-The package does not bundle WASM files — serve them from the host application. Build from source:
+The package ships the **LSP WASM** module (`gnata-lsp.wasm` + `lsp-wasm_exec.js`) in the `wasm/` directory — this powers diagnostics, autocomplete, and hover. A setup script is included to copy these files into your public directory:
 
 ```bash
-# Eval module (standard Go WASM)
-GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
-cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
-
-# LSP module (TinyGo WASM — 380 KB, 145 KB gzipped)
-tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -target wasm ./editor/
-cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
+npx @gnata-sqlite/react
 ```
 
-Serve all four files from the public/static directory.
+The **eval WASM** module (expression evaluation) is not bundled — build it from source if needed:
+
+```bash
+GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
+cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
+```
 
 ## License
 
