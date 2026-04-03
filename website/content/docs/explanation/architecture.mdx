@@ -60,7 +60,7 @@ See the [SQLite functions reference](/docs/reference/sqlite-functions) for full 
 | `main_lsp.go` | Native binary (VS Code, Neovim) | JSON-RPC 2.0 over stdin/stdout |
 | `diagnostics.go`, `completions.go`, `hover.go`, `schema.go`, `funcinfo.go`, `marshal.go` | Both | Shared logic |
 
-**Why TinyGo?** Standard Go WASM: ~5.3 MB. TinyGo: 126 KB (42x smaller). For a module that loads on every page visit, that is the difference between instant and a loading spinner.
+**Why TinyGo?** Standard Go WASM: ~5.3 MB. TinyGo: 380 KB (14x smaller). For a module that loads on every page visit, that is the difference between instant and a loading spinner.
 
 **Trade-off:** No `reflect` means no `encoding/json`. `marshal.go` is a hand-written, reflect-free JSON serializer. More code to maintain, but avoids runtime bloat.
 
@@ -110,7 +110,7 @@ Each layer emerged from a concrete need:
 1. Fast hot-path evaluation in SQLite → GJSON fast path
 2. JSONata in SQL → CGo extension with expression cache
 3. Extension hard to use without feedback → LSP
-4. LSP in browsers → TinyGo WASM (126 KB)
+4. LSP in browsers → TinyGo WASM (380 KB, 145 KB gzipped)
 5. WASM needs an editor → CodeMirror package
 6. Production editors need data awareness without data → schema protocol
 

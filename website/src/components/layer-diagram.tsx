@@ -146,7 +146,7 @@ export function LayerDiagram() {
 
       {/* WASM row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-        <Layer c={c} color={c.blue} icon={Zap} title="gnata-lsp.wasm" subtitle="TinyGo — 126KB (61KB gzipped)" />
+        <Layer c={c} color={c.blue} icon={Zap} title="gnata-lsp.wasm" subtitle="TinyGo — 380 KB (145 KB gzipped)" />
         <Layer c={c} color={c.teal} icon={Zap} title="gnata.wasm" subtitle="Standard Go WASM — eval engine" />
       </div>
 

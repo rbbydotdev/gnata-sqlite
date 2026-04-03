@@ -26,7 +26,7 @@ interface UseJsonataWasmOptions {
     evalWasmUrl?: string;
     /** URL to wasm_exec.js (standard Go WASM runtime). Required if evalWasmUrl is given. */
     evalExecUrl?: string;
-    /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 61KB gzipped). Provides autocomplete, hover, diagnostics. Defaults to '/gnata-lsp.wasm'. */
+    /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 145 KB gzipped). Provides autocomplete, hover, diagnostics. Defaults to '/gnata-lsp.wasm'. */
     lspWasmUrl?: string;
     /** URL to lsp-wasm_exec.js (TinyGo WASM runtime). Required if lspWasmUrl is given. Defaults to '/lsp-wasm_exec.js'. */
     lspExecUrl?: string;
@@ -73,7 +73,7 @@ declare const LSP_EXEC_DEFAULT_URL = "/lsp-wasm_exec.js";
 declare function useJsonataWasm(options?: UseJsonataWasmOptions): WasmState;
 
 /**
- * Lightweight hook for editor-only mode — loads just the LSP WASM (61KB gzipped).
+ * Lightweight hook for editor-only mode — loads just the LSP WASM (145 KB gzipped).
  *
  * The most common use case: embed a JSONata expression editor with autocomplete,
  * hover docs, and diagnostics. Evaluation runs on the backend, not in the browser.

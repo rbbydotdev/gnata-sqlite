@@ -27,7 +27,7 @@ export interface UseJsonataWasmOptions {
   evalWasmUrl?: string;
   /** URL to wasm_exec.js (standard Go WASM runtime). Required if evalWasmUrl is given. */
   evalExecUrl?: string;
-  /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 61KB gzipped). Provides autocomplete, hover, diagnostics. Defaults to '/gnata-lsp.wasm'. */
+  /** URL to gnata-lsp.wasm (LSP engine, TinyGo, 145 KB gzipped). Provides autocomplete, hover, diagnostics. Defaults to '/gnata-lsp.wasm'. */
   lspWasmUrl?: string;
   /** URL to lsp-wasm_exec.js (TinyGo WASM runtime). Required if lspWasmUrl is given. Defaults to '/lsp-wasm_exec.js'. */
   lspExecUrl?: string;

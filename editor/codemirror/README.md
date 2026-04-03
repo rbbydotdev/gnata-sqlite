@@ -1,6 +1,6 @@
 # @gnata-sqlite/codemirror
 
-CodeMirror 6 language support for [JSONata](https://jsonata.org) expressions — syntax highlighting, error diagnostics, autocomplete, and hover documentation, powered by a 85KB WASM module.
+CodeMirror 6 language support for [JSONata](https://jsonata.org) expressions — syntax highlighting, error diagnostics, autocomplete, and hover documentation, powered by a 380 KB WASM module (145 KB gzipped).
 
 ## Features
 
@@ -16,7 +16,7 @@ npm install @gnata-sqlite/codemirror
 ```
 
 You also need the WASM files served from your app:
-- `gnata-lsp.wasm` (61KB gzipped)
+- `gnata-lsp.wasm` (380 KB, 145 KB gzipped)
 - `lsp-wasm_exec.js` (TinyGo runtime)
 
 ## Quick Start
@@ -354,7 +354,7 @@ A complete working example using ESM imports (no build step):
 
 ```
 ┌─────────────────────────┐     ┌──────────────────────────┐
-│   Your App (browser)    │     │    gnata-lsp.wasm (85KB)  │
+│   Your App (browser)    │     │    gnata-lsp.wasm (145 KB)  │
 │                         │     │    TinyGo WASM module     │
 │  CodeMirror Editor      │────▶│                          │
 │  + @gnata-sqlite/codemirror    │     │  _gnataDiagnostics(expr) │

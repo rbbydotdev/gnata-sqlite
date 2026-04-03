@@ -34,7 +34,7 @@ The package ships pre-built WASM binaries for the editor LSP (autocomplete, diag
 npx @gnata-sqlite/react setup ./public
 ```
 
-This copies `gnata-lsp.wasm` (126KB) and `lsp-wasm_exec.js` (16KB) into `public/`.
+This copies `gnata-lsp.wasm` (380 KB, 145 KB gzipped) and `lsp-wasm_exec.js` (16 KB) into `public/`.
 
 ## Step 3: Editor with full language support
 
@@ -145,4 +145,4 @@ No WASM function props = no WASM loading. Highlighting works instantly with the 
 
 - [React Widget API Reference](/docs/reference/react-widget) — full props, hooks, and types
 - [Editor & LSP API](/docs/reference/editor-api) — low-level CodeMirror and WASM exports
-- [TinyGo WASM](/docs/explanation/tinygo-wasm) — why the LSP is 85KB
+- [TinyGo WASM](/docs/explanation/tinygo-wasm) — why the LSP is 145 KB

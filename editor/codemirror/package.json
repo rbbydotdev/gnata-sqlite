@@ -1,6 +1,6 @@
 {
   "name": "@gnata-sqlite/codemirror",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "CodeMirror 6 language support for JSONata — syntax highlighting, linting, and autocomplete",
   "type": "module",
   "main": "dist/index.cjs",

@@ -280,9 +280,8 @@ The package does not bundle WASM files — serve them from the host application.
 GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
 
-# LSP module (TinyGo WASM — 61KB gzipped)
-tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -scheduler=none -panic=trap -target wasm ./editor/
-wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
+# LSP module (TinyGo WASM — 380 KB, 145 KB gzipped)
+tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -target wasm ./editor/
 cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
 ```
 

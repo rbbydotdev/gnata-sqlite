@@ -1,7 +1,7 @@
 import { useJsonataWasm, type UseJsonataLspOptions, type WasmState } from './use-jsonata-wasm';
 
 /**
- * Lightweight hook for editor-only mode — loads just the LSP WASM (61KB gzipped).
+ * Lightweight hook for editor-only mode — loads just the LSP WASM (145 KB gzipped).
  *
  * The most common use case: embed a JSONata expression editor with autocomplete,
  * hover docs, and diagnostics. Evaluation runs on the backend, not in the browser.

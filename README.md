@@ -64,7 +64,7 @@ A composable React package (`@gnata-sqlite/react`) for embedding a JSONata expre
 
 <img src="assets/playground-gnata-hover.png" alt="Hover documentation showing $sum function" width="720" />
 
-Hover over any function to see its signature, description, and examples — powered by the 85KB TinyGo WASM LSP.
+Hover over any function to see its signature, description, and examples — powered by the 145 KB TinyGo WASM LSP.
 
 ### Context-Aware Autocomplete
 
@@ -105,7 +105,7 @@ function ExpressionBuilder() {
 
 **What end users get:** autocomplete, hover docs, live diagnostics, syntax highlighting
 
-**What developers get:** 85KB WASM LSP, hooks-first API, no eval required, schema-driven
+**What developers get:** 145 KB WASM LSP, hooks-first API, no eval required, schema-driven
 
 ## How It Fits Together
 
@@ -116,7 +116,7 @@ Backend                          Frontend
 ┌──────────────────┐            ┌──────────────────────────┐
 │ SQLite + gnata   │            │ @gnata-sqlite/react      │
 │ extension        │  schema →  │ CodeMirror 6 editor      │
-│                  │            │ + 85KB WASM LSP          │
+│                  │            │ + 145 KB WASM LSP          │
 │ Runs expressions │  ← expr    │ Autocomplete, hover,     │
 │ against JSON data│            │ diagnostics              │
 └──────────────────┘            └──────────────────────────┘

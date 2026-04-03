@@ -16,7 +16,7 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   beforeLoad: () => {
-    throw redirect({ to: '/sqlite' });
+    throw redirect({ to: '/sqlite/' });
   },
 });
 
@@ -40,7 +40,7 @@ const routeTree = rootRoute.addChildren([indexRoute, sqliteRoute, gnataRoute]);
 
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
 
-export const router = createRouter({ routeTree, basepath });
+export const router = createRouter({ routeTree, basepath, trailingSlash: 'always' });
 
 declare module '@tanstack/react-router' {
   interface Register {

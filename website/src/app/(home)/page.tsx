@@ -25,14 +25,14 @@ function GitHubIcon({ className, style }: { className?: string; style?: React.CS
 
 const stats = [
   { label: 'JSONata 2.x conformance', value: '1,778 tests', color: '#c0caf5' },
-  { label: 'WASM LSP (gzipped)', value: '85KB', color: '#9ece6a' },
+  { label: 'WASM LSP (gzipped)', value: '145 KB', color: '#9ece6a' },
   { label: 'Composable React package', value: '@gnata-sqlite/react', color: '#7aa2f7' },
 ];
 
 const featureColors: Record<string, string> = {
   'SQLite Extension': '#73daca',       // teal
   'React Editor Widget': '#bb9af7',    // vista/purple
-  '85KB WASM LSP': '#ff9e64',          // orange
+  '145 KB WASM LSP': '#ff9e64',          // orange
   'Context-Aware Autocomplete': '#9ece6a', // green sparkle
 };
 
@@ -51,7 +51,7 @@ const features = [
   },
   {
     icon: FileCode2,
-    title: '85KB WASM LSP',
+    title: '145 KB WASM LSP',
     description:
       'TinyGo-compiled language server provides diagnostics, autocomplete, and hover docs. Ships as a single .wasm file that runs in any browser or Node.js environment.',
   },
@@ -106,7 +106,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export const metadata: Metadata = {
   title: 'gnata-sqlite — End-to-end JSONata 2.x for SQLite, with React Editor',
-  description: 'Let end-users write JSONata expressions against SQLite data. Loadable SQLite extension, 85KB TinyGo WASM LSP with autocomplete and hover docs, and a composable React editor widget. Open source, MIT licensed.',
+  description: 'Let end-users write JSONata expressions against SQLite data. Loadable SQLite extension, 145 KB TinyGo WASM LSP with autocomplete and hover docs, and a composable React editor widget. Open source, MIT licensed.',
   openGraph: {
     images: `${basePath}/og-image.png`,
   },
