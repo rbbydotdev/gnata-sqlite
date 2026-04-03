@@ -8,6 +8,7 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 import { createHighlighter, type Highlighter } from 'shiki';
+import { Sparkline } from './sparkline';
 import { tokyoNightDark } from '@/lib/tokyo-night-dark';
 import { tokyoNightLight } from '@/lib/tokyo-night-light';
 
@@ -277,7 +278,7 @@ function SuiteSection({
   const paired = suite.tests.filter((t) => t.ratio !== null && isFinite(t.ratio!));
   const avgRatio =
     paired.length > 0
-      ? paired.reduce((sum, t) => sum + t.ratio!, 0) / paired.length
+      ? Math.exp(paired.reduce((sum, t) => sum + Math.log(t.ratio!), 0) / paired.length)
       : null;
 
   return (
@@ -298,10 +299,16 @@ function SuiteSection({
         </span>
         {avgRatio !== null && (
           <span
-            className="font-mono text-[13px] font-medium"
+            className="flex items-center gap-2 font-mono text-[13px] font-medium"
             style={{ color: ratioColor(avgRatio, isDark) }}
           >
-            avg {avgRatio.toFixed(2)}x
+            <Sparkline
+              values={paired.map((t) => t.ratio!)}
+              width={paired.length * 3 + (paired.length - 1)}
+              height={12}
+              color={(v) => ratioColor(v, isDark)}
+            />
+            {avgRatio.toFixed(2)}x
           </span>
         )}
       </button>

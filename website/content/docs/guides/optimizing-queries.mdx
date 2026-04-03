@@ -1,0 +1,134 @@
+---
+title: Optimizing Queries
+description: How to write jsonata_query expressions that stream in constant memory — and what happens when they don't
+---
+
+# Optimizing Queries
+
+`jsonata_query` includes a query planner that decomposes expressions into streaming accumulators at compile time. When it can decompose, queries run in **constant memory** with a single table scan — matching native SQL performance. When it can't, it falls back to accumulating all rows in memory.
+
+The difference is significant: **83ms vs 439ms** on 100K rows for the same 5-aggregate report. On larger datasets, the gap widens further since streaming is O(1) memory while accumulation is O(n).
+
+## What streams
+
+These patterns are recognized at compile time and never buffer rows:
+
+| Pattern | Example | Memory |
+|---|---|---|
+| Simple aggregates | `$sum(amount)`, `$count($)`, `$max(price)` | O(1) |
+| Filtered aggregates | `$sum($filter($, function($v){$v.status = "completed"}).amount)` | O(1) |
+| Count distinct | `$count($distinct(region))` | O(unique) |
+| Object/array constructors | `{ "a": $sum(x), "b": $max(y) }` | O(1) |
+| Post-aggregate arithmetic | `$sum(x) - $count($)` | O(1) |
+| Finalizer functions | `$round($average(x), 2)` | O(1) |
+| Constants | `"Q1 Report"`, `42` | O(1) |
+| Constant folding | `$sum(amount * 1.1)` → `$sum(amount) * 1.1` | O(1) |
+
+## What falls back to O(n)
+
+These patterns require all rows in memory. They work correctly, but memory and time scale linearly with row count:
+
+| Pattern | Why it can't stream |
+|---|---|
+| `$sort($, function($a,$b){...})` | Needs all rows to determine order |
+| `$reduce($, function($a,$v){...}, init)` | Each step depends on all previous rows |
+| `$map($, function($v){...})` | Output is one element per row — O(n) by definition |
+| Variable bindings + nested lambdas | `($x := $sum(amount); $map($, function($v){$v.amount / $x}))` — two-pass dependency |
+
+### What O(n) costs in practice
+
+On 100K rows with a 5-aggregate report:
+
+| Mode | Time | Memory |
+|---|---|---|
+| Streaming | 83ms | O(1) |
+| Accumulating | 439ms | O(100K rows) |
+
+At 1M rows, accumulation means holding every row in memory before evaluation begins. Streaming processes each row once and discards it.
+
+## Mixed expressions: partial fallback
+
+When streaming and opaque patterns coexist, **only the opaque keys pay the O(n) cost**:
+
+```sql
+jsonata_query('{
+  "total":  $sum(amount),         -- streams: O(1)
+  "avg":    $average(amount),     -- streams: O(1)
+  "top_5":  $sort($, fn)[0..4]   -- accumulates: O(n)
+}', data)
+```
+
+`total` and `avg` run in constant memory regardless. The planner doesn't give up on the entire expression because one key is expensive.
+
+## Keeping expressions on the fast path
+
+### Use identical predicate text for shared filters
+
+Predicates are deduplicated by **string equality**. Identical text shares one evaluation per row; rephrased predicates evaluate separately:
+
+```sql
+-- Shared: one predicate evaluation per row
+$sum($filter($, function($v){$v.status = "completed"}).amount)
+$average($filter($, function($v){$v.status = "completed"}).amount)
+
+-- NOT shared: different parameter name → two evaluations per row
+$sum($filter($, function($v){$v.status = "completed"}).amount)
+$average($filter($, function($row){$row.status = "completed"}).amount)
+```
+
+### Push sorting and filtering into SQL
+
+If you need the top N results, filter in SQL before the expression touches rows:
+
+```sql
+-- Instead of jsonata_query('$sort($, fn)[0..4]', data) over 100K rows:
+SELECT jsonata('...', data) FROM orders
+ORDER BY json_extract(data, '$.amount') DESC LIMIT 5;
+```
+
+### Use json_each for simple array expansion
+
+`jsonata_each` evaluates a full JSONata expression per row. For simple array expansion, `json_each` is ~6x faster:
+
+```sql
+-- Simple expand: prefer json_each
+SELECT j.value FROM events, json_each(data, '$.items') j;
+
+-- Filter + transform: jsonata_each earns its cost
+SELECT * FROM events, jsonata_each('items[price > 100].{
+  "name": product, "total": price * qty
+}', data);
+```
+
+### Use json_set for simple mutations
+
+`jsonata_set` re-parses the entire document. For simple path updates, `json_set` is 5-7x faster:
+
+```sql
+-- Simple: prefer json_set
+SELECT json_set(data, '$.status', 'done') FROM events;
+
+-- Nested creation: jsonata_set earns its cost (creates intermediate objects)
+SELECT jsonata_set(data, 'meta.source.type', '"import"') FROM events;
+```
+
+### Watch for format functions
+
+`$base64`, `$urlencode`, `$htmlescape`, and other format functions bypass the GJSON fast path, requiring full JSONata evaluation (~8-18 us/row vs ~0.25 us/row for simple paths). In mixed expressions, only the key using the format function pays this cost.
+
+## Quick reference
+
+| Expression | Streams? | Notes |
+|---|---|---|
+| `$sum(amount)` | yes | Simple path accumulator |
+| `$sum(amount * 1.1)` | yes | Constant folded |
+| `$sum($filter($, fn).amount)` | yes | Predicate + conditional accumulator |
+| `$count($distinct(region))` | yes | O(unique) memory |
+| `{ "a": $sum(x), "b": $max(y) }` | yes | Parallel accumulators, batch extraction |
+| `$round($average(x), 2)` | yes | Finalizer on streaming average |
+| `$sum(x) - $count($)` | yes | Post-aggregate arithmetic |
+| `$sort(...)` | **no** | O(n) — needs all data |
+| `$reduce($, fn, init)` | **no** | O(n) — cross-row state |
+| `$map($, fn)` | **no** | O(n) — output is one element per row |
+
+See the [query planner](/docs/explanation/query-planner) for the full decomposition model and internal optimization details.

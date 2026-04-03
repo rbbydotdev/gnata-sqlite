@@ -1,4 +1,4 @@
 {
   "title": "How-to Guides",
-  "pages": ["migrate-from-json-extract", "real-world-queries", "editor-setup"]
+  "pages": ["migrate-from-json-extract", "real-world-queries", "optimizing-queries", "editor-setup"]
 }
