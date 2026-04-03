@@ -18,7 +18,6 @@ The WASM module is 380 KB (145 KB gzipped).
 
 - **Node.js 18+** and a package manager
 - A frontend project that can import ES modules
-- For full features: `gnata-lsp.wasm` and `lsp-wasm_exec.js` (covered in Step 3)
 
 ## Step 1 — Install
 
@@ -46,12 +45,11 @@ Type `Account.Order.Product.Price` — tokens highlight immediately.
 
 ## Step 3 — Full setup with WASM LSP
 
-Place the WASM files where the app can serve them (e.g. `public/` in Vite):
+The WASM files are bundled with `@gnata-sqlite/react`. Copy them into your public directory:
 
-```
-public/
-  gnata-lsp.wasm
-  lsp-wasm_exec.js
+```bash
+npm install @gnata-sqlite/react
+npx @gnata-sqlite/react setup ./public
 ```
 
 Use `jsonataFull` instead of `jsonata`:
@@ -106,15 +104,15 @@ new EditorView({
 
 Type `Account.` → suggests `Name`, `Order`. Type `Account.Order.Product.` → suggests `Price`, `Quantity`.
 
-## Step 5 — Build WASM from source
+## Step 5 — Build WASM from source (optional)
 
-Requires [TinyGo](https://tinygo.org/getting-started/install/). See [Why TinyGo?](/docs/explanation/tinygo-wasm) for background.
+If you need to build from source instead of using the bundled files, install [TinyGo](https://tinygo.org/getting-started/install/) and run:
 
 ```bash
 make wasm
 ```
 
-Produces `gnata-lsp.wasm` (~380 KB, 145 KB gzipped) and `lsp-wasm_exec.js`. Copy both to the static assets directory.
+See [Why TinyGo?](/docs/explanation/tinygo-wasm) for background on the build pipeline.
 
 ## Try it live
 

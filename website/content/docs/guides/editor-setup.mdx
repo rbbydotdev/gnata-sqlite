@@ -23,7 +23,14 @@ new EditorView({
 
 ## Full support (diagnostics + autocomplete + hover)
 
-Requires WASM files — build or download from a release.
+Requires WASM files served from your app. The easiest way is to grab them from the `@gnata-sqlite/react` package:
+
+```bash
+npm install @gnata-sqlite/react
+npx @gnata-sqlite/react setup ./public
+```
+
+This copies `gnata-lsp.wasm` and `lsp-wasm_exec.js` into your public directory. Then:
 
 ```typescript
 import { EditorView, basicSetup } from "codemirror"
@@ -37,11 +44,7 @@ new EditorView({
 })
 ```
 
-## Build the WASM files
-
-```bash
-make wasm
-```
+Alternatively, build from source with `make wasm` (requires [TinyGo](https://tinygo.org/getting-started/install/)).
 
 ## Tooltip styling
 
