@@ -34,16 +34,19 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Build WASM
+      - name: Install TinyGo
         run: |
-          GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
-          cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
-          # LSP WASM ships pre-built in @gnata-sqlite/react
-          cp react/wasm/gnata-lsp.wasm gnata-lsp.wasm
-          cp react/wasm/lsp-wasm_exec.js lsp-wasm_exec.js
+          wget -q https://github.com/tinygo-org/tinygo/releases/download/v0.40.1/tinygo_0.40.1_amd64.deb -O /tmp/tinygo.deb
+          sudo dpkg -i /tmp/tinygo.deb
+
+      - name: Build WASM
+        run: make wasm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Stage WASM into react package
+        run: make stage-wasm-only
 
       - name: Build React widget
         run: cd react && pnpm run build

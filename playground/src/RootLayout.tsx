@@ -47,7 +47,7 @@ export function RootLayout() {
   const progressFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const location = useLocation();
-  const mode = location.pathname === '/gnata' ? 'gnata' : 'sqlite';
+  const mode = location.pathname.replace(/\/$/, '') === '/gnata' ? 'gnata' : 'sqlite';
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
