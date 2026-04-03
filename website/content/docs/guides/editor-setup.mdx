@@ -47,13 +47,17 @@ make wasm
 
 CodeMirror tooltips (hover docs, autocomplete, diagnostics) render as portals outside the editor DOM. They need global CSS to be styled.
 
-A Tokyo Night stylesheet is included as a starting point:
+A Tokyo Night stylesheet is included with each package:
 
 ```tsx
+// If using @gnata-sqlite/codemirror directly:
+import '@gnata-sqlite/codemirror/styles.css';
+
+// If using @gnata-sqlite/react:
 import '@gnata-sqlite/react/tooltips.css';
 ```
 
-This covers dark and light mode using the Tokyo Night palette. For custom themes, copy `tooltips.css` from the package and adjust the colors to match your design system. The key selectors are `.cm-tooltip-hover`, `.cm-hover-tooltip`, `.cm-tooltip-autocomplete`, and `.cm-lintRange-error`.
+This covers dark and light mode using the Tokyo Night palette. For custom themes, override the key selectors: `.cm-tooltip-hover`, `.cm-hover-tooltip`, `.cm-tooltip-autocomplete`, and `.cm-lintRange-error`.
 
 ## Schema for autocomplete
 

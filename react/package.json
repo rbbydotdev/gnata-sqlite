@@ -1,6 +1,6 @@
 {
   "name": "@gnata-sqlite/react",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Composable React widget for the gnata JSONata editor with WASM LSP support",
   "type": "module",
   "main": "./dist/index.js",
