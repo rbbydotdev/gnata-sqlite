@@ -34,21 +34,13 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install TinyGo
-        run: |
-          wget -q https://github.com/tinygo-org/tinygo/releases/download/v0.40.1/tinygo_0.40.1_amd64.deb -O /tmp/tinygo.deb
-          sudo dpkg -i /tmp/tinygo.deb
-
-      - name: Install Binaryen
-        run: sudo apt-get install -y binaryen
-
       - name: Build WASM
         run: |
           GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o gnata.wasm ./wasm/
           cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
-          tinygo build -o gnata-lsp.wasm -no-debug -gc=conservative -scheduler=none -panic=trap -target wasm ./editor/
-          wasm-opt -Oz --enable-bulk-memory gnata-lsp.wasm -o gnata-lsp.wasm
-          cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" lsp-wasm_exec.js
+          # LSP WASM ships pre-built in @gnata-sqlite/react
+          cp react/wasm/gnata-lsp.wasm gnata-lsp.wasm
+          cp react/wasm/lsp-wasm_exec.js lsp-wasm_exec.js
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
