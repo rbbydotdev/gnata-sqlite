@@ -40,6 +40,8 @@ export interface UseJsonataEditorOptions {
   schema?: Schema;
   /** Whether to show line numbers (default: false for expression editor) */
   lineNumbers?: boolean;
+  /** Additional CodeMirror extensions */
+  extensions?: Extension[];
 }
 
 export interface UseJsonataEditorReturn {
@@ -135,10 +137,10 @@ export function useJsonataEditor(options: UseJsonataEditorOptions): UseJsonataEd
       // If typing after a dot, try to evaluate the prefix expression
       if (isDot && gnataEval) {
         const prefixExpr = beforeFrom.substring(0, beforeFrom.length - 1).trim();
-        let items = null;
-        if (prefixExpr) items = tryEvalKeys(prefixExpr, inputJson, partial, gnataEval);
-        if (!items || items.length === 0) items = allKeysFromJson(inputJson, partial);
-        if (items && items.length > 0) return { from, options: items.slice(0, 10) };
+        if (prefixExpr) {
+          const items = tryEvalKeys(prefixExpr, inputJson, partial, gnataEval);
+          if (items && items.length > 0) return { from, options: items.slice(0, 10) };
+        }
       }
 
       // Try LSP completions
@@ -149,11 +151,11 @@ export function useJsonataEditor(options: UseJsonataEditorOptions): UseJsonataEd
           const result = gnataCompletions(doc, pos, schemaStr);
           const items = JSON.parse(result);
           if (items.length > 0) return { from, options: items.slice(0, 10) };
-        } catch { /* empty */ }
+        } catch (e) { console.warn('LSP completions error:', e); }
       }
 
-      // Fallback: all keys from input JSON
-      if (isDot) {
+      // Fallback: all keys from input JSON (only when no LSP available)
+      if (isDot && !gnataCompletions) {
         const items = allKeysFromJson(inputJson, partial);
         if (items && items.length > 0) return { from, options: items.slice(0, 10) };
       }
@@ -245,6 +247,10 @@ export function useJsonataEditor(options: UseJsonataEditorOptions): UseJsonataEd
 
     if (options.placeholder) {
       extensions.push(placeholderExt(options.placeholder));
+    }
+
+    if (options.extensions) {
+      extensions.push(...options.extensions);
     }
 
     const view = new EditorView({

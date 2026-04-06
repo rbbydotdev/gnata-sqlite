@@ -31,6 +31,8 @@ export interface JsonataEditorProps {
   gnataHover?: ((doc: string, pos: number, schema: string) => string | null) | null;
   /** Getter for current input JSON (for introspective autocomplete) */
   getInputJson?: () => string;
+  /** Additional CodeMirror extensions */
+  extensions?: Extension[];
   /** CSS class name for the container */
   className?: string;
   /** Inline style for the container */
@@ -84,6 +86,7 @@ export const JsonataEditor = React.memo(function JsonataEditor(props: JsonataEdi
     gnataHover: props.gnataHover,
     getInputJson: stableGetInputJson,
     schema: props.schema,
+    extensions: props.extensions,
   });
 
   // Sync external value prop into editor — only when the change came from outside

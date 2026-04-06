@@ -23,7 +23,8 @@ export const darkColors = {
 
 /** Tokyo Night light palette */
 export const lightColors = {
-  bg: '#d5d6db',
+  // Matches lightTokenColors.bg so editor and UI containers share the same background
+  bg: '#e1e2e7',
   surface: '#e1e2e7',
   surfaceHover: 'rgba(0,0,0,0.04)',
   text: '#3760bf',

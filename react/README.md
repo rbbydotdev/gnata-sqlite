@@ -11,7 +11,7 @@ npm install @gnata-sqlite/react
 Copy the bundled WASM files into your public directory:
 
 ```bash
-npx @gnata-sqlite/react
+npx @gnata-sqlite/react setup ./public
 ```
 
 Peer dependencies: `react >=18`, `react-dom >=18`.
